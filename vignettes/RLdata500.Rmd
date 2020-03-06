@@ -1,0 +1,102 @@
+---
+title: "Introduction to dblinkR"
+author: "Neil Marchant"
+date: "6 March 2020"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to dblinkR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=7, 
+  fig.height=5
+)
+```
+
+Connect to Spark in pseudocluster mode
+```{r}
+library(sparklyr)
+library(dblinkR)
+
+sc <- spark_connect(master = "local", version = "2.3.1")
+```
+
+Save results in the following directory
+```{r}
+projectPath <- "/home/nmarchant/dblink/"
+```
+
+Experiment with RLdata500
+```{r}
+records <- read.csv("/home/nmarchant/Dropbox/Education/PhD/bayesian-er/dblink/examples/RLdata500.csv")
+records['file_id'] <- 1
+records <- lapply(records, as.character) %>% as.data.frame(stringsAsFactors = FALSE)
+```
+
+Define model parameters
+```{r}
+distortionPrior <- BetaRV(1, 50)
+levSim <- LevenshteinSimFn(threshold = 7.0, maxSimilarity =  10.0)
+attributeSpecs <- list(
+  fname_c1 = Attribute(levSim, distortionPrior),
+  lname_c1 = Attribute(levSim, distortionPrior),
+  by = CategoricalAttribute(distortionPrior),
+  bm = CategoricalAttribute(distortionPrior),
+  bd = CategoricalAttribute(distortionPrior)
+)
+```
+
+Don't use partitioning, since this is such a small data set
+```{r}
+partitioner <- KDTreePartitioner(0, c('fname_c1', 'bd'))
+```
+
+Initialize Markov chain and run inference
+```{r}
+state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
+                         partitioner = partitioner, populationSize = 500L,
+                         fileIdColname = 'file_id', randomSeed = 1,
+                         maxClusterSize = 10L)
+
+result <- runInference(state, projectPath, sampleSize = 100, burninInterval = 1000)
+```
+
+Alternative load results from disk
+```{r}
+# result <- loadDBlinkResult(sc, projectPath)
+```
+
+
+Can examine diagnostics
+```{r}
+diagnostics <- loadDiagnostics(sc, projectPath)
+plot(diagnostics$iteration, diagnostics$numObservedEntities)
+```
+
+```{r}
+clustSizeDist <- clusterSizeDistribution(linkageChain)
+partSize <- partitionSizes(linkageChain)
+# TODO plot
+```
+
+
+Finally, do evaluation
+```{r}
+linkageChain <- dblinkR::loadLinkageChain(sc, projectPath)
+predClusters <- dblinkR::sharedMostProbableClusters(linkageChain, NULL) %>% collect
+trueClusters <- exchangeableER::membershipToClusters(records$ent_id, ids = records$rec_id)
+predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
+trueMatches <- exchangeableER::clustersToPairs.Clusters(trueClusters)
+numRecords <- nrow(records)
+conMat <- exchangeableER::confusionMatrix(predMatches, trueMatches, numRecords*(numRecords - 1)/2)
+print(exchangeableER::pairwiseMetrics(conMat))
+```
+
+
+
+

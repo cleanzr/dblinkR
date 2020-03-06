@@ -1,0 +1,39 @@
+Package: dblinkR
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Authors@R: c(
+    person(given = "Neil", 
+           family = "Marchant", 
+           email = "ngmarchant@gmail.com", 
+           role = c("aut", "cre")),
+    person(given = "Rebecca",
+           family = "Steorts", 
+           email = "beka@stat.duke.edu",
+           role = "ths"),
+    person(given = "Benjamin",
+           family = "Rubinstein", 
+           email = "brubinstein@unimelb.edu.au", 
+           role = "ths"))
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: GPL-3
+Imports:
+    sparklyr,
+    sparklyr.nested,
+    forge
+Encoding: UTF-8
+LazyData: true
+Collate:
+    'similarityFns.R'
+    'utils.R'
+    'betaRV.R'
+    'attribute.R'
+    'dependencies.R'
+    'runInference.R'
+    'linkageChain.R'
+    'summaryStats.R'
+    'partitioners.R'
+    'state.R'
+RoxygenNote: 7.0.2
+Roxygen: list(markdown = TRUE)
