@@ -37,6 +37,9 @@ setMethod("clusterSizeDistribution", signature = c(x="linkagechain"),
       sparklyr.nested::sdf_explode(`_2`, is_map = TRUE) %>%
       sparklyr::sdf_collect()
     colnames(clustSizeDist) <- c("iteration", "clusterSize", "frequency")
+    clustSizeDist$iteration <- as.integer(clustSizeDist$iteration)
+    clustSizeDist$clusterSize <- as.factor(clustSizeDist$clusterSize)
+    clustSizeDist$frequency <- as.integer(clustSizeDist$frequency)
     clustSizeDist
   }
 )
@@ -79,6 +82,9 @@ setMethod("partitionSizes", signature = c(x="linkagechain"),
       sparklyr.nested::sdf_explode(`_2`, is_map = TRUE) %>%
       sparklyr::sdf_collect()
     colnames(partSizes) <- c("iteration", "partitionId", "size")
+    partSizes$iteration <- as.integer(partSizes$iteration)
+    partSizes$partitionId <- as.factor(partSizes$partitionId)
+    partSizes$size <- as.integer(partSizes$size)
     partSizes
   }
 )
