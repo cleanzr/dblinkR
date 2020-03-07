@@ -28,12 +28,12 @@ sc <- spark_connect(master = "local", version = "2.3.1")
 
 Save results in the following directory
 ```{r}
-projectPath <- "/home/nmarchant/dblink/"
+projectPath <- "."
 ```
 
 Experiment with RLdata500
 ```{r}
-records <- read.csv("/home/nmarchant/Dropbox/Education/PhD/bayesian-er/dblink/examples/RLdata500.csv")
+records <- RLdata500
 records['file_id'] <- 1
 records <- lapply(records, as.character) %>% as.data.frame(stringsAsFactors = FALSE)
 ```
