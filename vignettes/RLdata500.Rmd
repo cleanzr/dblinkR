@@ -20,6 +20,10 @@ knitr::opts_chunk$set(
 
 Connect to Spark in pseudocluster mode
 ```{r}
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
 library(sparklyr)
 library(dblinkR)
 
@@ -28,13 +32,15 @@ sc <- spark_connect(master = "local", version = "2.3.1")
 
 Save results in the following directory
 ```{r}
-projectPath <- "."
+projectPath <- paste0(getwd(), "/") # current working directory
 ```
 
 Experiment with RLdata500
 ```{r}
 records <- RLdata500
 records['file_id'] <- 1
+records['rec_id'] <- seq_len(nrow(records))
+records['ent_id'] <- identity.RLdata500
 records <- lapply(records, as.character) %>% as.data.frame(stringsAsFactors = FALSE)
 ```
 
@@ -66,7 +72,7 @@ state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
 result <- runInference(state, projectPath, sampleSize = 100, burninInterval = 100)
 ```
 
-Alternative load results from disk
+Alternatively load results from disk
 ```{r}
 result <- loadResult(sc, projectPath)
 ```
@@ -75,14 +81,41 @@ result <- loadResult(sc, projectPath)
 Can examine diagnostics
 ```{r}
 diagnostics <- loadDiagnostics(sc, projectPath)
-plot(diagnostics$iteration, diagnostics$numObservedEntities, type="l")
+
+ggplot(diagnostics, aes(x=iteration, y=numObservedEntities)) + 
+  geom_line() + 
+  labs(title = 'Trace plot: # entity clusters', x = 'Iteration', 
+       y = '# clusters')
+
+diagnostics %>%
+  select(iteration, starts_with("aggDist")) %>%
+  gather(attribute, numDistortions, starts_with("aggDist")) %>%
+  mutate(attribute = str_match(attribute, "^aggDist(.+)")[,2],
+         numDistortions = numDistortions / nrow(records)) %>% 
+  ggplot(aes(x=iteration, y=numDistortions)) +  
+  geom_line(aes(colour = attribute)) + 
+  labs(title = 'Trace plot: attribute distortion', x = 'Iteration', 
+       y = '% distorted', colour = 'Attribute')
+
+ggplot(diagnostics, aes(x=iteration, y=logLikelihood)) + 
+  geom_line() + 
+  labs(title = 'Trace plot: log-likelihood (unnormalized)', x = 'Iteration', 
+       y = 'log-likelihood')
 ```
 
 ```{r}
 linkageChain <- dblinkR::loadLinkageChain(sc, projectPath)
 clustSizeDist <- clusterSizeDistribution(linkageChain)
-partSize <- partitionSizes(linkageChain)
-# TODO plot
+ggplot(clustSizeDist, aes(x=iteration, y=frequency)) + 
+  geom_line(aes(colour = clusterSize)) + 
+  labs(title = 'Trace plot: cluster size distribution', x = 'Iteration', 
+       y = 'Frequency', colour = 'Cluster size')
+
+partSizes <- partitionSizes(linkageChain)
+ggplot(partSizes, aes(x=iteration, y=size)) + 
+  geom_line(aes(colour = partitionId)) + 
+  labs(title = 'Trace plot: partition sizes', x = 'Iteration', y = 'Size', 
+       colour = 'Partition')
 ```
 
 
