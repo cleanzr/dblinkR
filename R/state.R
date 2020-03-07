@@ -1,7 +1,16 @@
 #' @include utils.R partitioners.R similarityFns.R attribute.R
 NULL
 
-setOldClass("state_jobj")
+setOldClass("dblinkstate")
+
+new_dblinkstate <- function(jobj, ...) {
+  dblinkstate <- list(jobj = jobj)
+  class(dblinkstate) <- c("dblinkstate", class(dblinkstate))
+}
+
+spark_jobj.dblinkstate <- function(x, ...) {
+  x$jobj
+}
 
 #' Initialize the model state
 #'
@@ -80,14 +89,14 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
   partitioner <- Partitioner_as_scala(sc, partitioner, names(attributeSpecs))
 
   sdf_jobj <- spark_dataframe(data)
-  state <- sc %>%
+  state_jobj <- sc %>%
     sparklyr::invoke_static("com.github.cleanzr.dblink.State",
                             "deterministic",
                             sdf_jobj, recIdColname, fileIdColname,
                             attributeSpecs_seq, parameters, partitioner,
                             randomSeed)
-  class(state) <- c("state_jobj", class(state))
-  state
+
+  new_dblinkstate(state_jobj)
 }
 
 
@@ -97,9 +106,8 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
 #' @return A `state_jobj` object.
 loadState <- function(sc, projectPath) {
   projectPath <- forge::cast_scalar_character(projectPath, id='path')
-  state <- sc %>%
+  state_jobj <- sc %>%
     sparklyr::invoke_static("com.github.cleanzr.dblink.State", "read",
                             projectPath)
-  class(state) <- c("state_jobj", class(state))
-  state
+  new_dblinkstate(state_jobj)
 }

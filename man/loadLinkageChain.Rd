@@ -9,7 +9,7 @@ loadLinkageChain(sc, projectPath)
 \arguments{
 \item{sc}{A \code{spark_connection}.}
 
-\item{projectPath}{path to the project directory.}
+\item{projectPath}{Path to the project directory.}
 }
 \value{
 A \code{LinkageChain} jobj.

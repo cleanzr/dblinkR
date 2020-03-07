@@ -52,5 +52,5 @@ that an entity attribute is distorted in the data), and
 }
 
 A named list of \code{Attribute} objects is required when initializing
-the model (see \code{\link{createProject}}).
+the model (see \code{\link{initializeState}}).
 }

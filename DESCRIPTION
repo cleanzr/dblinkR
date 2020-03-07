@@ -29,11 +29,12 @@ Collate:
     'utils.R'
     'betaRV.R'
     'attribute.R'
-    'dependencies.R'
-    'runInference.R'
-    'linkageChain.R'
-    'summaryStats.R'
     'partitioners.R'
     'state.R'
+    'runInference.R'
+    'linkageChain.R'
+    'clusterAnalysis.R'
+    'dependencies.R'
+    'summaryStats.R'
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)

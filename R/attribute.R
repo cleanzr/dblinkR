@@ -19,7 +19,7 @@ setClass("Attribute", slots=c(simFn="SimFn",
 #' * the distance function (parameterizes the distortion distribution).
 #'
 #' A named list of `Attribute` objects is required when initializing
-#' the model (see [`createProject`]).
+#' the model (see [`initializeState`]).
 #'
 #' @param simFn a [`SimilarityFn`]` object.
 #' @param distortionPrior a [`BetaRV`] object. Specifies the prior

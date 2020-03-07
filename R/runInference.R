@@ -1,4 +1,24 @@
-setOldClass("DBlinkResult")
+#' @include state.R
+NULL
+
+setOldClass("dblinkresult")
+
+new_dblinkresult <- function(state, projectPath, ..., linkageChain = NULL) {
+  result <- list(projectPath = projectPath, state = state,
+                 linkageChain = NULL)
+  class(result) <- c("dblinkresult", class(result))
+}
+
+#' Load a dblink result from disk
+#'
+#' @param sc A `spark_connection`.
+#' @param projectPath path to the project directory.
+#' @return A `LinkageChain` jobj.
+loadResult <- function(sc, projectPath) {
+  finalState <- loadState(sc, projectPath)
+  linkageChain <- loadLinkageChain(sc, projectPath)
+  new_dblinkresult(finalState, projectPath, linkageChain = linkageChain)
+}
 
 #' Run inference using Markov chain Monte Carlo
 #'
@@ -34,11 +54,11 @@ runInference <- function(initialState, projectPath, sampleSize,
                          burninInterval = 0L, thinningInterval = 1L,
                          checkpointInterval = 20L, writeBufferSize = 10L,
                          sampler = 'PCG-I') {
-  if (!inherits(initialState, "state_jobj"))
-    stop("`initialState` must be a `state_jobj` object")
-  # Remove class in this function so that the object can be serialized
-  class(initialState) <- Filter(function(x) x != "state_jobj", class(initialState))
-  sc <- initialState$connection
+  if (!inherits(initialState, "dblinkstate"))
+    stop("`initialState` must be a `dblinkstate` object")
+
+  state_jobj <- sparklyr::spark_jobj(initialState)
+  sc <- state_jobj$connection
 
   projectPath <- forge::cast_scalar_character(projectPath, id='projectPath')
   sampleSize <- forge::cast_scalar_integer(sampleSize, id='sampleSize')
@@ -63,15 +83,15 @@ runInference <- function(initialState, projectPath, sampleSize,
     stop("Unrecognized `sampler`")
   }
 
-  finalState <- sc %>%
+  state_jobj <- sc %>%
     sparklyr::invoke_static("com.github.cleanzr.dblink.Sampler",
-                            "sample", initialState, sampleSize, projectPath,
+                            "sample", state_jobj, sampleSize, projectPath,
                             burninInterval, thinningInterval,
                             checkpointInterval, writeBufferSize,
                             collapsedEntityIds, collapsedEntityValues,
                             sequential)
-  result <- list(projectPath = projectPath, state = finalState,
-                 linkageChain = NULL)
-  class(result) <- c("DBlinkResult", class(result))
-  result
+
+  finalState <- new_dblinkstate(state_jobj)
+
+  new_dblinkresult(finalState, projectPath, linkageChain = NULL)
 }

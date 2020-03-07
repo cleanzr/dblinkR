@@ -63,22 +63,23 @@ state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
                          fileIdColname = 'file_id', randomSeed = 1,
                          maxClusterSize = 10L)
 
-result <- runInference(state, projectPath, sampleSize = 100, burninInterval = 1000)
+result <- runInference(state, projectPath, sampleSize = 100, burninInterval = 100)
 ```
 
 Alternative load results from disk
 ```{r}
-# result <- loadDBlinkResult(sc, projectPath)
+result <- loadResult(sc, projectPath)
 ```
 
 
 Can examine diagnostics
 ```{r}
 diagnostics <- loadDiagnostics(sc, projectPath)
-plot(diagnostics$iteration, diagnostics$numObservedEntities)
+plot(diagnostics$iteration, diagnostics$numObservedEntities, type="l")
 ```
 
 ```{r}
+linkageChain <- dblinkR::loadLinkageChain(sc, projectPath)
 clustSizeDist <- clusterSizeDistribution(linkageChain)
 partSize <- partitionSizes(linkageChain)
 # TODO plot
@@ -87,8 +88,7 @@ partSize <- partitionSizes(linkageChain)
 
 Finally, do evaluation
 ```{r}
-linkageChain <- dblinkR::loadLinkageChain(sc, projectPath)
-predClusters <- dblinkR::sharedMostProbableClusters(linkageChain, NULL) %>% collect
+predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
 trueClusters <- exchangeableER::membershipToClusters(records$ent_id, ids = records$rec_id)
 predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
 trueMatches <- exchangeableER::clustersToPairs.Clusters(trueClusters)
