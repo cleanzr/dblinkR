@@ -6,6 +6,7 @@ setOldClass("dblinkstate")
 new_dblinkstate <- function(jobj, ...) {
   dblinkstate <- list(jobj = jobj)
   class(dblinkstate) <- c("dblinkstate", class(dblinkstate))
+  dblinkstate
 }
 
 spark_jobj.dblinkstate <- function(x, ...) {
