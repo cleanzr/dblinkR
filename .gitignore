@@ -2,3 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Data from a local run of dblink
+.parquet
+.crc
+.csv
+.log
