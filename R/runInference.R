@@ -60,6 +60,15 @@ runInference <- function(initialState, projectPath, sampleSize,
   state_jobj <- sparklyr::spark_jobj(initialState)
   sc <- state_jobj$connection
 
+  # Only proceed if we can use checkpoints
+  checkpointDir <- sc %>%
+    sparklyr::spark_context() %>%
+    invoke("getCheckpointDir") %>%
+    jobj_class(simple_name = FALSE) %>%
+    head(1)
+  if (checkpointDir == "scala.None$")
+    stop("Spark checkpoint directory is not set. Please use `sparklyr::spark_set_checkpoint_dir` to set a checkpoint directory.")
+
   projectPath <- forge::cast_scalar_character(projectPath, id='projectPath')
   sampleSize <- forge::cast_scalar_integer(sampleSize, id='sampleSize')
   burninInterval <- forge::cast_scalar_integer(burninInterval, id='burninInterval')
