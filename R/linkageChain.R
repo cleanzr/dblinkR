@@ -13,6 +13,15 @@ spark_jobj.linkagechain <- function(x, ...) {
   x$jobj
 }
 
+collect.linkagechain <- function(x, ...) {
+  chain <- x %>%
+    sparklyr::spark_jobj() %>%
+    sparklyr::sdf_register() %>%
+    sparklyr::sdf_collect()
+  chain$linkageStructure <- lapply(chain$linkageStructure, function(x) lapply(x, simplify2array))
+  chain
+}
+
 #' Load samples of the linkage structure
 #'
 #' @param sc A `spark_connection`.
