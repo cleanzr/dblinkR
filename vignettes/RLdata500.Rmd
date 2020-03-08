@@ -1,7 +1,7 @@
 ---
 title: "Introduction to dblinkR"
 author: "Neil Marchant"
-date: "6 March 2020"
+date: "8 March 2020"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introduction to dblinkR}
@@ -18,36 +18,62 @@ knitr::opts_chunk$set(
 )
 ```
 
-Connect to Spark in pseudocluster mode
-```{r}
+We begin by loading the required packages. Note that the `dblinkR` package 
+must be loaded *after* `sparklyr`.
+```{r, echo=FALSE}
+# For running dblink
+library(sparklyr)
+library(dblinkR)
+
+# For generating trace plots
 library(stringr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(sparklyr)
-library(dblinkR)
-
-sc <- spark_connect(master = "local", version = "2.3.1")
 ```
 
-Save results in the following directory
-```{r}
-projectPath <- paste0(getwd(), "/") # current working directory
+## Connecting to Spark
+In this vignette, we'll run `dblink` on a local instance of Spark with 2 
+cores. This is sufficient for testing purposes, however for larger data sets, 
+we recommend connecting to a Spark deployment. The `sparklyr` 
+[documentation](https://spark.rstudio.com/deployment/) contains information 
+about connecting to Spark deployments.
+```{r, echo=FALSE}
+sc <- spark_connect(master = "local[2]", version = "2.4.3")
+spark_context(sc) %>% invoke("setLogLevel", "WARN")
 ```
 
-Experiment with RLdata500
+`dblink` requires a location on disk (includes HDFS) to save diagnostics, 
+posterior samples and the state of the Markov chain. We refer to this location 
+as the *project path*, and set it to the current working directory below. 
+We must also specify a location on disk to save Spark checkpoints. 
+```{r, echo=FALSE}
+projectPath <- paste0(getwd(), "/") # working directory
+spark_set_checkpoint_dir(sc, paste0(projectPath, "checkpoints/"))
+```
+
+## Synthetic data
+We'll experiment with the `RLdata500` synthetic data included with the package. 
+It contains 500 records, 50 of which are duplicates with random distortions. 
+We add in a column for record identifiers, which will be used to specify 
+the linkage structure.
 ```{r}
 records <- RLdata500
-records['file_id'] <- 1
 records['rec_id'] <- seq_len(nrow(records))
-records['ent_id'] <- identity.RLdata500
 records <- lapply(records, as.character) %>% as.data.frame(stringsAsFactors = FALSE)
+head(RLdata500)
 ```
 
-Define model parameters
+## dblink parameters
+Next we specify the parameters for the `dblink` model. We treat the 
+name-related attributes as string-type with a Levenshtein similarity 
+function, and the date-related attributes as categorical (with a constant 
+similarity function). We also place a Beta prior on the distortion probability 
+for each attribute.
 ```{r}
-distortionPrior <- BetaRV(1, 50)
-levSim <- LevenshteinSimFn(threshold = 7.0, maxSimilarity =  10.0)
+distortionPrior <- BetaRV(1, 5)
+levSim <- LevenshteinSimFn(threshold = 7, maxSimilarity =  10)
+
 attributeSpecs <- list(
   fname_c1 = Attribute(levSim, distortionPrior),
   lname_c1 = Attribute(levSim, distortionPrior),
@@ -57,31 +83,62 @@ attributeSpecs <- list(
 )
 ```
 
-Don't use partitioning, since this is such a small data set
+The Beta prior on the distortion probabilities favours low distortion, as 
+shown below.
 ```{r}
-partitioner <- KDTreePartitioner(0, c('fname_c1', 'bd'))
+tibble(prob = seq(from=0, to=1, by=0.01)) %>%
+  mutate(density = dbeta(prob, distortionPrior@shape1, distortionPrior@shape2)) %>%
+  ggplot(aes(x = prob, y = density)) + geom_line() + 
+  labs(title = "Prior distribution on the distortion probabilities", 
+       x = "Distortion probability", y = "Density")
 ```
 
-Initialize Markov chain and run inference
+We also place a vague shifted negative binomial prior on the size of the 
+latent entity population. 
+```{r}
+populationSize <- ShiftedNegBinomRV(2.0, 0.001)
+tibble(prob = seq(from=0, to=4000, by=10)) %>%
+  mutate(density = dnbinom(prob + 1, populationSize@size, populationSize@prob)) %>%
+  ggplot(aes(x = prob, y = density)) + geom_line() + 
+  labs(title = "Prior distribution on the population size", 
+       x = "Population size", y = "Density")
+```
+
+Finally, we specify the partitioner. Since the data is small in this case, 
+there is no need to partition the data, so we set the tree depth to 0 below.
+```{r}
+partitioner <- KDTreePartitioner(0, character())
+```
+
+## Running inference
+Now that we've specified the model parameters, we're ready to run inference. 
+The results will be saved in the project path.
+
 ```{r}
 state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
-                         partitioner = partitioner, populationSize = 500L,
-                         fileIdColname = 'file_id', randomSeed = 1,
-                         maxClusterSize = 10L)
+                         partitioner = partitioner, populationSize = populationSize,
+                         randomSeed = 1, maxClusterSize = 10L)
 
-result <- runInference(state, projectPath, sampleSize = 100, burninInterval = 100)
+result <- runInference(state, projectPath, sampleSize = 100, 
+                       burninInterval = 1000, thinningInterval = 10)
 ```
 
-Alternatively load results from disk
-```{r}
-result <- loadResult(sc, projectPath)
+To load previously saved results, we can use the following function.
+```{r, eval=FALSE}
+# result <- loadResult(sc, projectPath)
 ```
 
 
-Can examine diagnostics
+## MCMC diagnostics
+Diagnostic statistics along the Markov chain are saved in the 
+`diagnostics.csv` file located in the project path. We can use the function 
+below to load these into a local tibble.
 ```{r}
 diagnostics <- loadDiagnostics(sc, projectPath)
+```
 
+It's useful to examine trace plots, to assess the convergence.
+```{r}
 ggplot(diagnostics, aes(x=iteration, y=numObservedEntities)) + 
   geom_line() + 
   labs(title = 'Trace plot: # entity clusters', x = 'Iteration', 
@@ -97,14 +154,22 @@ diagnostics %>%
   labs(title = 'Trace plot: attribute distortion', x = 'Iteration', 
        y = '% distorted', colour = 'Attribute')
 
+ggplot(diagnostics, aes(x=iteration, y=popSize)) + 
+  geom_line() + 
+  labs(title = 'Trace plot: population size', x = 'Iteration', 
+       y = 'Size')
+
 ggplot(diagnostics, aes(x=iteration, y=logLikelihood)) + 
   geom_line() + 
   labs(title = 'Trace plot: log-likelihood (unnormalized)', x = 'Iteration', 
        y = 'log-likelihood')
 ```
 
+Additional diagnostics statistics can be computed from the samples of the 
+linkage structure, which we refer to as the *linkage chain*. 
 ```{r}
-linkageChain <- dblinkR::loadLinkageChain(sc, projectPath)
+linkageChain <- loadLinkageChain(sc, projectPath)
+
 clustSizeDist <- clusterSizeDistribution(linkageChain)
 ggplot(clustSizeDist, aes(x=iteration, y=frequency)) + 
   geom_line(aes(colour = clusterSize)) + 
@@ -118,11 +183,20 @@ ggplot(partSizes, aes(x=iteration, y=size)) +
        colour = 'Partition')
 ```
 
-
-Finally, do evaluation
+## Evaluation
+We compute a point estimate of the posterior linkage structure/clustering 
+using the *shared most probable maximal matching sets method*. Note that we 
+must use the `collect` function to retrieve the data from Spark into a local 
+tibble.
 ```{r}
 predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
-trueClusters <- exchangeableER::membershipToClusters(records$ent_id, ids = records$rec_id)
+```
+
+Next we assess the quality of the predicted linkage structure by 
+computing pairwise precision and recall using functions from the 
+`exchangeableER` package.
+```{r}
+trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
 predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
 trueMatches <- exchangeableER::clustersToPairs.Clusters(trueClusters)
 numRecords <- nrow(records)
