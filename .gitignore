@@ -7,6 +7,5 @@
 *.parquet
 *.crc
 *.csv
-*
 *.log
 **driver-state
