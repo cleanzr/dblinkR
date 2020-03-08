@@ -25,3 +25,8 @@ as_scala_some <- function(x, sc) {
 #' @param x input
 #' @return TRUE if `x` is a scalar and FALSE otherwise
 is.scalar <- function(x) is.atomic(x) && length(x) == 1L
+
+scala_none <- function(sc) {
+  sc %>%
+    sparklyr::invoke_static("scala.None$", "MODULE$")
+}
