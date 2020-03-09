@@ -105,9 +105,10 @@ tibble(prob = seq(from=0, to=4000, by=10)) %>%
 ```
 
 Finally, we specify the partitioner. Since the data is small in this case, 
-there is no need to partition the data, so we set the tree depth to 0 below.
+we can switch partitioning off by setting the partitioner to `NULL`. 
+For larger data sets, we recommend using the `KDTreePartitioner`.
 ```{r}
-partitioner <- KDTreePartitioner(0, character())
+partitioner <- NULL
 ```
 
 ## Running inference

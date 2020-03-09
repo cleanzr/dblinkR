@@ -25,7 +25,8 @@ spark_jobj.dblinkstate <- function(x, ...) {
 #' @param recIdColname Column name in `data` that contains unique record
 #'   identifiers.
 #' @param partitioner A [`Partitioner-class`] object which specifies how to
-#'   partition the space of entities.
+#'   partition the space of entities (optional). If NULL, the entities are
+#'   not partitioned at all, however this can severely hinder scalability.
 #' @param fileIdColname Column name in `data` that contains contains
 #'   file/source identifiers for the records. If NULL, the records are assumed
 #'   to be from a single file/source.
@@ -58,6 +59,10 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
     stop("`recIdColname` does not match any columns in `data`")
   }
 
+  if (is.null(partitioner)) {
+    # Don't partition
+    partitioner <- KDTreePartitioner(0, character())
+  }
   if (!is.Partitioner(partitioner))
     stop("`partitioner` must be a Partitioner object")
 

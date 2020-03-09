@@ -31,10 +31,13 @@ and should match one of the column names (attributes) in
 identifiers.}
 
 \item{partitioner}{A \code{\linkS4class{Partitioner}} object which specifies how to
-partition the space of entities.}
+partition the space of entities (optional). If NULL, the entities are
+not partitioned at all, however this can severely hinder scalability.}
 
-\item{populationSize}{An integer which specifies the size of the latent
-population of entities.}
+\item{populationSize}{Specifies the prior on the size of the population of
+latent entities. An integer specifies a fixed population size, a
+a \code{\link{ShiftedNegBinomRV}} object specifies a shifted negative binomial
+prior.}
 
 \item{fileIdColname}{Column name in \code{data} that contains contains
 file/source identifiers for the records. If NULL, the records are assumed

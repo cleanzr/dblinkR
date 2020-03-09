@@ -28,7 +28,6 @@ Collate:
     'similarityFns.R'
     'utils.R'
     'betaRV.R'
-    'shiftedNegBinomRV.R'
     'attribute.R'
     'partitioners.R'
     'state.R'
@@ -36,6 +35,7 @@ Collate:
     'linkageChain.R'
     'clusterAnalysis.R'
     'dependencies.R'
+    'shiftedNegBinomRV.R'
     'summaryStats.R'
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
