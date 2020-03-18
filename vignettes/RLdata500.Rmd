@@ -1,6 +1,6 @@
 ---
 title: "Introduction to dblinkR"
-author: "Neil Marchant"
+author: "Neil Marchant and Rebecca C. Steorts"
 date: "18 March 2020"
 output: rmarkdown::html_vignette
 vignette: >
@@ -120,9 +120,6 @@ The results will be saved in the project path.
 state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
                          partitioner = partitioner, populationSize = populationSize,
                          randomSeed = 1, maxClusterSize = 10L)
-
-result <- runInference(state, projectPath, sampleSize = 1000, 
-                       burninInterval = 5000, thinningInterval = 10)
 ```
 
 To load previously saved results, we can use the following function.
@@ -204,23 +201,48 @@ print(exchangeableER::pairwiseMetrics(conMat))
 ```
 
 ### Posterior estimates
-We can use the posterior samples to make inferences about unknown quantities. 
-First, we consider the number of unique entities present in the data. 
-This summary statistics is stored in the diagnostics, and we use the 
-samples to generate a histogram below. The red line represents the ground 
-truth.
+
+First, we compute the posterior mean, posterior variance, and a 95 percent credible interval from our resulting proposed methodology. These summary statistics is stored in the diagnostics, which we utilize below in order to calculate our desired summary statistics.
+
+```{r}
+head(diagnostics$numObservedEntities)
+(posteriorMean <- mean(diagnostics$numObservedEntities))
+(posteriorVariance <- var(diagnostics$numObservedEntities))
+posteriorStd <- sqrt(posteriorVariance)
+error <- qnorm(0.975)*posteriorStd/sqrt(numRecords) 
+(cbind(posteriorMean - error, posteriorMean + error))
+```
+
+
+Second, we may wish to visualize the estimated posterior distribution, while comparing this to the true
+value (red) and the posterior mean (blue). Again, we can utilize the posterior samples, which are stored in diagnostics in order to generate a histogram as shown below. 
 
 ```{r posterior-plot}
 ggplot(diagnostics) + 
   geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
+  geom_vline(aes(xintercept = posteriorMean), color='blue') + 
   geom_vline(aes(xintercept = 450), color='red') + 
   labs(x = "# of entities", y = "Frequency", title = "Posterior number of observed entities")
 ```
 
-Second, we consider the distortion level observed in each attribute, averaged 
+In addition, we can place a credible interval (green) onto the resulting histogram quite easily, which we do below. 
+
+```{r posterior-plot-credible}
+ggplot(diagnostics) + 
+  geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
+  geom_vline(aes(xintercept = posteriorMean), color='blue') + 
+  geom_vline(aes(xintercept = 450), color='red') + 
+  geom_vline(aes(xintercept = posteriorMean - error), color='green') + 
+  geom_vline(aes(xintercept = posteriorMean + error), color='green') + 
+  labs(x = "# of entities", y = "Frequency", title = "Posterior number of observed entities")
+```
+
+
+Third, we consider the distortion level observed in each attribute, averaged 
 across all of the records. This information is also stored in the 
 diagnostics. Below we plot the posterior median for each attribute with a 
 95\% highest density interval.
+
 ```{r posterior-attribute-distortion}
 diagnostics %>%
   select(iteration, starts_with("aggDist")) %>%
