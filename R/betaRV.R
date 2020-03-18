@@ -53,9 +53,9 @@ BetaRV <- function(shape1, shape2) {
   new("BetaRV", shape1=shape1, shape2=shape2)
 }
 
-betaRV_to_scala <- function(sc, beta) {
+as_scala.BetaRV <- function(x, sc) {
   sc %>%
     sparklyr::invoke_new("com.github.cleanzr.dblink.package$BetaShapeParameters",
-                         beta@shape1,
-                         beta@shape2)
+                         x@shape1,
+                         x@shape2)
 }

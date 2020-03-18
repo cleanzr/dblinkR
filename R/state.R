@@ -30,10 +30,9 @@ spark_jobj.dblinkstate <- function(x, ...) {
 #' @param fileIdColname Column name in `data` that contains contains
 #'   file/source identifiers for the records. If NULL, the records are assumed
 #'   to be from a single file/source.
-#' @param populationSize Specifies the prior on the size of the population of
-#'   latent entities. An integer specifies a fixed population size, a
-#'   a [`ShiftedNegBinomRV`] object specifies a shifted negative binomial
-#'   prior.
+#' @param populationSize An integer specifying the size of the latent entity
+#'   population (optional). If NULL, the population size is set equal to the
+#'   number of records in `data`.
 #' @param randomSeed An integer random seed.
 #' @param maxClusterSize A guess at the maximum cluster size in `data`.
 #' @return A `state_jobj` object
@@ -66,7 +65,7 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
   if (!is.Partitioner(partitioner))
     stop("`partitioner` must be a Partitioner object")
 
-  if (!is.ShiftedNegBinomRV(populationSize)) {
+  if (!is.null(populationSize)) {
     populationSize <- forge::cast_scalar_integer(populationSize, id='populationSize')
   }
 
@@ -85,7 +84,7 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
   if (!is.null(fileIdColname)) {
     fileIdColname <- as_scala_some(fileIdColname, sc)
   } else {
-    fileIdColname <- scala_none(sc)
+    fileIdColname <- as_scala(NULL, sc)
   }
 
   parameters <- sc %>%
@@ -93,21 +92,18 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
                          maxClusterSize)
 
   attributeSpecs <- lapply(seq_along(attributeSpecs), function(i) {
-    Attribute_to_scala(sc, attributeSpecs[[i]], names(attributeSpecs)[i])
+    as_scala(attributeSpecs[[i]], sc, names(attributeSpecs)[i])
   })
 
   attributeSpecs_seq <- attributeSpecs %>%
     as_scala_buffer(sc) %>%
     sparklyr::invoke("toIndexedSeq")
 
-  partitioner <- Partitioner_as_scala(sc, partitioner, names(attributeSpecs))
-  if (is.ShiftedNegBinomRV(populationSize)) {
-    populationSize <- shiftedNegBinomRV_to_scala(sc, populationSize)
+  partitioner <- as_scala(partitioner, sc, names(attributeSpecs))
+  if (is.null(populationSize)) {
+    populationSize <- as_scala(NULL, sc)
   } else {
-    populationSize <- sc %>%
-      sparklyr::invoke_static("com.github.cleanzr.dblink.PopulationSize$",
-                              "MODULE$") %>%
-      sparklyr::invoke("apply", populationSize)
+    populationSize <- as_scala_some(populationSize, sc)
   }
 
 

@@ -29,7 +29,7 @@ KDTreePartitioner <- function(numLevels, attributes) {
   new("KDTreePartitioner", numLevels=as.integer(numLevels), attributes=attributes)
 }
 
-Partitioner_as_scala <- function(sc, partitioner, attributeNames) {
+as_scala.Partitioner <- function(partitioner, sc, attributeNames) {
   if (!inherits(partitioner, "KDTreePartitioner"))
     stop("partitioner of type", class(partitioner), "not supported")
 

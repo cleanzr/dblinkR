@@ -11,7 +11,7 @@ as_scala_buffer <- function(x, sc) {
   return(sbuf)
 }
 
-#' Converts an object to a 'Some' object
+#' Wraps an object in a Scala 'Some' object
 #'
 #' @param x An R or jobj.
 #' @param sc A `spark_connection`
@@ -26,7 +26,17 @@ as_scala_some <- function(x, sc) {
 #' @return TRUE if `x` is a scalar and FALSE otherwise
 is.scalar <- function(x) is.atomic(x) && length(x) == 1L
 
-scala_none <- function(sc) {
+#' Converts an R object to an equivalent Scala object
+#'
+#' @param x R object coercible to a Scala object
+#' @param sc A `spark_connection`
+#' @return a jobj reference to a Scala object
+as_scala <- function (x, sc, ...) {
+  UseMethod("as_scala", x)
+}
+
+# R NULL object is represented as a Scala None object.
+as_scala.NULL <- function(x, sc, ...) {
   sc %>%
     sparklyr::invoke_static("scala.None$", "MODULE$")
 }

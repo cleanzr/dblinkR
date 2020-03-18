@@ -55,10 +55,10 @@ CategoricalAttribute <- function(distortionPrior) {
 is.CategoricalAttribute <- function(x) inherits(x, "CategoricalAttribute")
 
 
-Attribute_to_scala <- function(sc, attribute, name) {
+as_scala.Attribute <- function(x, sc, name) {
   sc %>%
     sparklyr::invoke_new("com.github.cleanzr.dblink.package$Attribute",
                          forge::cast_scalar_character(name),
-                         simFn_to_scala(sc, attribute@simFn),
-                         betaRV_to_scala(sc, attribute@distortionPrior))
+                         as_scala(x@simFn, sc),
+                         as_scala(x@distortionPrior, sc))
 }

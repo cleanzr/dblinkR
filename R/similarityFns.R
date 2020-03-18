@@ -52,14 +52,14 @@ LevenshteinSimFn <- function(threshold, maxSimilarity) {
   new("LevenshteinSimFn", threshold = threshold, maxSimilarity = maxSimilarity)
 }
 
+#' @param x A `SimFn` object
 #' @param sc A `spark_connection`
-#' @param simFn A `SimFn` object
-simFn_to_scala <- function(sc, simFn) {
-  switch(class(simFn)[1],
+as_scala.SimFn <- function(x, sc) {
+  switch(class(x)[1],
          ConstantSimFn = sparklyr::invoke_static(sc,
                                                  "com.github.cleanzr.dblink.SimilarityFn$ConstantSimilarityFn$", "MODULE$"),
          LevenshteinSimFn = sparklyr::invoke_new(sc,
                                                  "com.github.cleanzr.dblink.SimilarityFn$LevenshteinSimilarityFn",
-                                                 simFn@threshold,
-                                                 simFn@maxSimilarity))
+                                                 x@threshold,
+                                                 x@maxSimilarity))
 }

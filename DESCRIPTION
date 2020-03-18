@@ -1,7 +1,7 @@
 Package: dblinkR
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
+Title: Distributed Bayesian entity resolution in Apache Spark
+Version: 0.2.0
 Authors@R: c(
     person(given = "Neil", 
            family = "Marchant", 
@@ -35,7 +35,6 @@ Collate:
     'linkageChain.R'
     'clusterAnalysis.R'
     'dependencies.R'
-    'shiftedNegBinomRV.R'
     'summaryStats.R'
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
