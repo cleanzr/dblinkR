@@ -9,3 +9,5 @@
 *.csv
 *.log
 **driver-state
+doc
+Meta
