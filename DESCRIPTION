@@ -1,6 +1,6 @@
 Package: dblinkR
 Type: Package
-Title: Distributed Bayesian entity resolution in Apache Spark
+Title: R interface for dblink
 Version: 0.2.0
 Authors@R: c(
     person(given = "Neil", 
@@ -15,8 +15,9 @@ Authors@R: c(
            family = "Rubinstein", 
            email = "brubinstein@unimelb.edu.au", 
            role = "ths"))
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: An R interface for the dblink Apache Spark package. dblink 
+    implements a distributed algorithm for performing unsupervised Bayesian 
+    entity resolution.
 License: GPL-3
 Imports:
     sparklyr,
