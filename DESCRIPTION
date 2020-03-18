@@ -36,6 +36,7 @@ Collate:
     'clusterAnalysis.R'
     'dependencies.R'
     'summaryStats.R'
+    'data.R'
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
 Suggests: knitr, rmarkdown, stringr, dplyr, tidyr, ggplot2, tidybayes, 
