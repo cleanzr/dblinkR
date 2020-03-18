@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 We begin by loading the required packages. Note that the `dblinkR` package 
 must be loaded *after* `sparklyr`.
-```{r, echo=FALSE}
+```{r packages, message=FALSE}
 # For running dblink
 library(sparklyr)
 library(dblinkR)
@@ -41,7 +41,7 @@ cores. This is sufficient for testing purposes, however for larger data sets,
 we recommend connecting to a Spark deployment. The `sparklyr` 
 [documentation](https://spark.rstudio.com/deployment/) contains information 
 about connecting to Spark deployments.
-```{r, echo=FALSE}
+```{r spark-connect, message=FALSE}
 sc <- spark_connect(master = "local[2]", version = "2.4.3")
 spark_context(sc) %>% invoke("setLogLevel", "WARN")
 ```
@@ -50,7 +50,7 @@ spark_context(sc) %>% invoke("setLogLevel", "WARN")
 posterior samples and the state of the Markov chain. We refer to this location 
 as the *project path*, and set it to the current working directory below. 
 We must also specify a location on disk to save Spark checkpoints. 
-```{r, echo=FALSE}
+```{r set-paths, message=FALSE}
 projectPath <- paste0(getwd(), "/") # working directory
 spark_set_checkpoint_dir(sc, paste0(projectPath, "checkpoints/"))
 ```
@@ -60,7 +60,7 @@ We'll experiment with the `RLdata500` synthetic data included with the package.
 It contains 500 records, 50 of which are duplicates with random distortions. 
 We add in a column for record identifiers, which will be used to specify 
 the linkage structure.
-```{r}
+```{r load-data}
 records <- RLdata500
 records['rec_id'] <- seq_len(nrow(records))
 records <- lapply(records, as.character) %>% as.data.frame(stringsAsFactors = FALSE)
@@ -73,7 +73,7 @@ name-related attributes as string-type with a Levenshtein similarity
 function, and the date-related attributes as categorical (with a constant 
 similarity function). We also place a Beta prior on the distortion probability 
 for each attribute.
-```{r}
+```{r set-attribute-parameters}
 distortionPrior <- BetaRV(1, 50)
 levSim <- LevenshteinSimFn(threshold = 7, maxSimilarity =  10)
 
@@ -88,7 +88,7 @@ attributeSpecs <- list(
 
 The Beta prior on the distortion probabilities favours low distortion, as 
 shown below.
-```{r}
+```{r plot-distortion-prior}
 tibble(prob = seq(from=0, to=1, by=0.01)) %>%
   mutate(density = dbeta(prob, distortionPrior@shape1, distortionPrior@shape2)) %>%
   ggplot(aes(x = prob, y = density)) + geom_line() + 
@@ -101,14 +101,14 @@ population size favours under-linkage, while a smaller population
 size favours over-linkge. By default, the population size is set to the 
 number of records in the data. This is specified by setting the population 
 size to `NULL`:
-```{r}
+```{r set-population-size}
 populationSize <- NULL
 ```
 
 Finally, we specify the partitioner. Since the data is small in this case, 
 we can switch partitioning off by setting the partitioner to `NULL`. 
 For larger data sets, we recommend using the `KDTreePartitioner`.
-```{r}
+```{r set-partitioner}
 partitioner <- NULL
 ```
 
@@ -116,13 +116,13 @@ partitioner <- NULL
 Now that we've specified the model parameters, we're ready to run inference. 
 The results will be saved in the project path.
 
-```{r}
+```{r run-inference}
 state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
                          partitioner = partitioner, populationSize = populationSize,
                          randomSeed = 1, maxClusterSize = 10L)
 
-result <- runInference(state, projectPath, sampleSize = 100, 
-                       burninInterval = 1000, thinningInterval = 10)
+result <- runInference(state, projectPath, sampleSize = 1000, 
+                       burninInterval = 5000, thinningInterval = 10)
 ```
 
 To load previously saved results, we can use the following function.
@@ -135,12 +135,12 @@ To load previously saved results, we can use the following function.
 Diagnostic statistics along the Markov chain are saved in the 
 `diagnostics.csv` file located in the project path. We can use the function 
 below to load these into a local tibble.
-```{r}
+```{r read-diagnostics}
 diagnostics <- loadDiagnostics(sc, projectPath)
 ```
 
 It's useful to examine trace plots, to assess the convergence.
-```{r}
+```{r diagnostic-plots-1}
 ggplot(diagnostics, aes(x=iteration, y=numObservedEntities)) + 
   geom_line() + 
   labs(title = 'Trace plot: # entity clusters', x = 'Iteration', 
@@ -164,7 +164,7 @@ ggplot(diagnostics, aes(x=iteration, y=logLikelihood)) +
 
 Additional diagnostics statistics can be computed from the samples of the 
 linkage structure, which we refer to as the *linkage chain*. 
-```{r}
+```{r diagnostic-plots-2}
 linkageChain <- loadLinkageChain(sc, projectPath)
 
 clustSizeDist <- clusterSizeDistribution(linkageChain)
@@ -186,14 +186,14 @@ We compute a point estimate of the posterior linkage structure/clustering
 using the *shared most probable maximal matching sets method*. Note that we 
 must use the `collect` function to retrieve the data from Spark into a local 
 tibble.
-```{r}
+```{r smpc}
 predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
 ```
 
 Next we assess the quality of the predicted linkage structure by 
 computing pairwise precision and recall using functions from the 
 [`exchangeableER`](https://github.com/ngmarchant/exchangeableER) package.
-```{r, message=FALSE}
+```{r pairwise-metrics, message=FALSE}
 library(exchangeableER)
 trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
 predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
@@ -210,7 +210,7 @@ This summary statistics is stored in the diagnostics, and we use the
 samples to generate a histogram below. The red line represents the ground 
 truth.
 
-```{r}
+```{r posterior-plot}
 ggplot(diagnostics) + 
   geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
   geom_vline(aes(xintercept = 450), color='red') + 
@@ -221,7 +221,7 @@ Second, we consider the distortion level observed in each attribute, averaged
 across all of the records. This information is also stored in the 
 diagnostics. Below we plot the posterior median for each attribute with a 
 95\% highest density interval.
-```{r}
+```{r posterior-attribute-distortion}
 diagnostics %>%
   select(iteration, starts_with("aggDist")) %>%
   gather(attribute, numDistortions, starts_with("aggDist")) %>%
