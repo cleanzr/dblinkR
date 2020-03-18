@@ -22,9 +22,7 @@ knitr::opts_chunk$set(
 [`dblink`](https://github.com/cleanzr/dblink)—an Apache Spark package for 
 performing unsupervised entity resolution. 
 It implements a generative Bayesian model for entity resolution called `blink` 
-[@steorts_entity_2015](https://projecteuclid.org/euclid.ba/1441790411), 
-with extensions proposed in
-[@marchant_d-blink_2019](https://arxiv.org/abs/1909.06039).
+[@steorts_entity_2015], with extensions proposed in [@marchant_d-blink_2019].
 Unlike many entity resolution methods, `dblink` approximates the full posterior 
 distribution over the _linkage structure_.
 This facilitates propagation of uncertainty to post-entity resolution 
@@ -41,7 +39,7 @@ library(devtools)
 install_github("ngmarchant/dblinkR")
 ```
 
-## Dependencies
+### Dependencies
 `dblinkR` depends heavily on the `sparklyr` R interface for Apache Spark. 
 Please refer to the `sparklyr` [website](https://spark.rstudio.com/) for 
 information about connecting to a Spark deployment. 

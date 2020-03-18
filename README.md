@@ -8,13 +8,11 @@
 [`dblink`](https://github.com/cleanzr/dblink)—an Apache Spark package
 for performing unsupervised entity resolution. It implements a
 generative Bayesian model for entity resolution called `blink` (Steorts
-2015)(<https://projecteuclid.org/euclid.ba/1441790411>), with extensions
-proposed in (Marchant et al. 2019)(<https://arxiv.org/abs/1909.06039>).
-Unlike many entity resolution methods, `dblink` approximates the full
-posterior distribution over the *linkage structure*. This facilitates
-propagation of uncertainty to post-entity resolution analysis, and
-provides a framework for answering probabilistic queries about entity
-membership.
+2015), with extensions proposed in (Marchant et al. 2019). Unlike many
+entity resolution methods, `dblink` approximates the full posterior
+distribution over the *linkage structure*. This facilitates propagation
+of uncertainty to post-entity resolution analysis, and provides a
+framework for answering probabilistic queries about entity membership.
 
 ## Installation
 
@@ -26,7 +24,7 @@ library(devtools)
 install_github("ngmarchant/dblinkR")
 ```
 
-## Dependencies
+### Dependencies
 
 `dblinkR` depends heavily on the `sparklyr` R interface for Apache
 Spark. Please refer to the `sparklyr`
@@ -56,6 +54,7 @@ GPL-3
 Marchant, Neil G., Rebecca C. Steorts, Andee Kaplan, Benjamin I. P.
 Rubinstein, and Daniel N. Elazar. 2019. “D-Blink: Distributed End-to-End
 Bayesian Entity Resolution.” *arXiv E-Prints*, September.
+<https://arxiv.org/abs/1909.06039>.
 
 </div>
 
