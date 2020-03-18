@@ -38,3 +38,6 @@ Collate:
     'summaryStats.R'
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
+Suggests: knitr, rmarkdown, stringr, dplyr, tidyr, ggplot2, tidybayes, 
+    exchangeableER
+VignetteBuilder: knitr
