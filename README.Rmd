@@ -18,12 +18,18 @@ knitr::opts_chunk$set(
 # dblinkR: An R interface for dblink
 
 ## Overview
-TODO
-
-
-## Features
-TODO
-
+`dblinkR` is an R interface for 
+[`dblink`](https://github.com/cleanzr/dblink)—an Apache Spark package for 
+performing unsupervised entity resolution. 
+It implements a generative Bayesian model for entity resolution called `blink` 
+[@steorts_entity_2015](https://projecteuclid.org/euclid.ba/1441790411), 
+with extensions proposed in
+[@marchant_d-blink_2019](https://arxiv.org/abs/1909.06039).
+Unlike many entity resolution methods, `dblink` approximates the full posterior 
+distribution over the _linkage structure_.
+This facilitates propagation of uncertainty to post-entity resolution 
+analysis, and provides a framework for answering probabilistic queries about 
+entity membership.
 
 ## Installation
 `dblinkR` is not currently available on CRAN. 
@@ -35,11 +41,21 @@ library(devtools)
 install_github("ngmarchant/dblinkR")
 ```
 
+## Dependencies
+`dblinkR` depends heavily on the `sparklyr` R interface for Apache Spark. 
+Please refer to the `sparklyr` [website](https://spark.rstudio.com/) for 
+information about connecting to a Spark deployment. 
+
+`dblinkR` currently supports Spark releases in the 2.3.x series and 2.4.x 
+series. Spark releases prior to 2.3.x are not supported.
+
 ## Example
-See [vignette](vignette/RLdata500.Rmd)
+The  [RLdata500 vignette](vignettes/RLdata500.Rmd) demonstrates how to 
+use the `dblinkR` to perform entity resolution for a small synthetic data 
+set. This example is small enough to run well on a laptop (Spark cluster 
+not required).
 
 ## Licence
 GPL-3
 
 ## References
-TODO
