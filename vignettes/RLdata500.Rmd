@@ -30,6 +30,9 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+
+# For generating credible interval plots
+library(tidybayes)
 ```
 
 ## Connecting to Spark
@@ -71,7 +74,7 @@ function, and the date-related attributes as categorical (with a constant
 similarity function). We also place a Beta prior on the distortion probability 
 for each attribute.
 ```{r}
-distortionPrior <- BetaRV(0.5, 50)
+distortionPrior <- BetaRV(1, 50)
 levSim <- LevenshteinSimFn(threshold = 7, maxSimilarity =  10)
 
 attributeSpecs <- list(
@@ -178,6 +181,7 @@ ggplot(partSizes, aes(x=iteration, y=size)) +
 ```
 
 ## Evaluation
+### Linkage quality
 We compute a point estimate of the posterior linkage structure/clustering 
 using the *shared most probable maximal matching sets method*. Note that we 
 must use the `collect` function to retrieve the data from Spark into a local 
@@ -189,7 +193,7 @@ predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
 Next we assess the quality of the predicted linkage structure by 
 computing pairwise precision and recall using functions from the 
 [`exchangeableER`](https://github.com/ngmarchant/exchangeableER) package.
-```{r}
+```{r, message=FALSE}
 library(exchangeableER)
 trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
 predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
@@ -199,6 +203,34 @@ conMat <- exchangeableER::confusionMatrix(predMatches, trueMatches, numRecords*(
 print(exchangeableER::pairwiseMetrics(conMat))
 ```
 
+### Posterior estimates
+We can use the posterior samples to make inferences about unknown quantities. 
+First, we consider the number of unique entities present in the data. 
+This summary statistics is stored in the diagnostics, and we use the 
+samples to generate a histogram below. The red line represents the ground 
+truth.
 
+```{r}
+ggplot(diagnostics) + 
+  geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
+  geom_vline(aes(xintercept = 450), color='red') + 
+  labs(x = "# of entities", y = "Frequency", title = "Posterior number of observed entities")
+```
 
-
+Second, we consider the distortion level observed in each attribute, averaged 
+across all of the records. This information is also stored in the 
+diagnostics. Below we plot the posterior median for each attribute with a 
+95\% highest density interval.
+```{r}
+diagnostics %>%
+  select(iteration, starts_with("aggDist")) %>%
+  gather(attribute, numDistortions, starts_with("aggDist")) %>%
+  transmute(attribute = str_match(attribute, "^aggDist(.+)")[,2],
+            percDistorted = numDistortions / nrow(records)) %>% 
+  group_by(attribute) %>%
+  point_interval(.interval = hdi) %>%
+  ggplot(aes(attribute, percDistorted)) + 
+    geom_pointinterval(interval_size_range = c(0.1, 1), position=position_dodge(width = 0.9), fatten_point = 1.4) + 
+    coord_flip() + 
+    labs(x = "Attribute", y = "Distortion level (%)", title = "Posterior distortion level by attribute")
+```
