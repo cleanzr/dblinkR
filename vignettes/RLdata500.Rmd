@@ -1,7 +1,7 @@
 ---
 title: "Introduction to dblinkR"
 author: "Neil Marchant"
-date: "8 March 2020"
+date: "18 March 2020"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introduction to dblinkR}
@@ -71,7 +71,7 @@ function, and the date-related attributes as categorical (with a constant
 similarity function). We also place a Beta prior on the distortion probability 
 for each attribute.
 ```{r}
-distortionPrior <- BetaRV(1, 5)
+distortionPrior <- BetaRV(0.5, 50)
 levSim <- LevenshteinSimFn(threshold = 7, maxSimilarity =  10)
 
 attributeSpecs <- list(
@@ -93,15 +93,13 @@ tibble(prob = seq(from=0, to=1, by=0.01)) %>%
        x = "Distortion probability", y = "Density")
 ```
 
-We also place a vague shifted negative binomial prior on the size of the 
-latent entity population. 
+We can also specify the size of the latent entity population. A larger 
+population size favours under-linkage, while a smaller population 
+size favours over-linkge. By default, the population size is set to the 
+number of records in the data. This is specified by setting the population 
+size to `NULL`:
 ```{r}
-populationSize <- ShiftedNegBinomRV(2.0, 0.001)
-tibble(prob = seq(from=0, to=4000, by=10)) %>%
-  mutate(density = dnbinom(prob + 1, populationSize@size, populationSize@prob)) %>%
-  ggplot(aes(x = prob, y = density)) + geom_line() + 
-  labs(title = "Prior distribution on the population size", 
-       x = "Population size", y = "Density")
+populationSize <- NULL
 ```
 
 Finally, we specify the partitioner. Since the data is small in this case, 
@@ -155,11 +153,6 @@ diagnostics %>%
   labs(title = 'Trace plot: attribute distortion', x = 'Iteration', 
        y = '% distorted', colour = 'Attribute')
 
-ggplot(diagnostics, aes(x=iteration, y=popSize)) + 
-  geom_line() + 
-  labs(title = 'Trace plot: population size', x = 'Iteration', 
-       y = 'Size')
-
 ggplot(diagnostics, aes(x=iteration, y=logLikelihood)) + 
   geom_line() + 
   labs(title = 'Trace plot: log-likelihood (unnormalized)', x = 'Iteration', 
@@ -195,8 +188,9 @@ predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
 
 Next we assess the quality of the predicted linkage structure by 
 computing pairwise precision and recall using functions from the 
-`exchangeableER` package.
+[`exchangeableER`](https://github.com/ngmarchant/exchangeableER) package.
 ```{r}
+library(exchangeableER)
 trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
 predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
 trueMatches <- exchangeableER::clustersToPairs.Clusters(trueClusters)
