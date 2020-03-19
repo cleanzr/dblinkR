@@ -9,6 +9,19 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+We present an example from Marchant, Kaplan, Elazar, Rubinstein, and Steorts (2020), "d-blink: Distributed End-to-End Bayesian Entity Resolution." We will be using a dataset that was formally in the deprecated RecordLinkage package in R, known as the RLdata500 data set. This data set contains first and last name and full date of birth. 
+
+The dblinkR package performs joint blocking and entity resolution from multiple databases using the methods outlined in the paper above. 
+
+Our goals include:
+
+- Loading Required Packages and Connecting to Spark 
+- Presenting the RLdata500 dataset with summary information.
+- Illustrating how we can format the RLdata500 dataset to work with the dblinkR package
+- Running Inference for dblinkR
+- Looking a Diagnostics Results 
+- Performing Evaluation Metrics 
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -17,6 +30,9 @@ knitr::opts_chunk$set(
   fig.height=5
 )
 ```
+
+
+## Loading Required Packages
 
 We begin by loading the required packages. Note that the `dblinkR` package 
 must be loaded *after* `sparklyr`.
@@ -36,43 +52,52 @@ library(tidybayes)
 ```
 
 ## Connecting to Spark
-In this vignette, we'll run `dblink` on a local instance of Spark with 2 
+In this vignette, we will run `dblink` on a local instance of Spark with 2 
 cores. This is sufficient for testing purposes, however for larger data sets, 
 we recommend connecting to a Spark deployment. The `sparklyr` 
 [documentation](https://spark.rstudio.com/deployment/) contains information 
 about connecting to Spark deployments.
+
 ```{r spark-connect, message=FALSE}
 sc <- spark_connect(master = "local[2]", version = "2.4.3")
 spark_context(sc) %>% invoke("setLogLevel", "WARN")
 ```
 
 `dblink` requires a location on disk (includes HDFS) to save diagnostics, 
-posterior samples and the state of the Markov chain. We refer to this location 
+posterior samples, and the state of the Markov chain. We refer to this location 
 as the *project path*, and set it to the current working directory below. 
-We must also specify a location on disk to save Spark checkpoints. 
+In addition, we must also specify a location on disk to save Spark checkpoints. 
 ```{r set-paths, message=FALSE}
 projectPath <- paste0(getwd(), "/") # working directory
 spark_set_checkpoint_dir(sc, paste0(projectPath, "checkpoints/"))
 ```
 
-## Synthetic data
-We'll experiment with the `RLdata500` synthetic data included with the package. 
-It contains 500 records, 50 of which are duplicates with random distortions. 
-We add in a column for record identifiers, which will be used to specify 
-the linkage structure.
+Now, that we have loaded packages that are needed and connected to spark, we can proceed with the rest of the tutorial! 
+
+## Understanding the RLdata500 dataset
+
+The RLdata500 data consists of 500 records with 10 percent duplication. Thus, there are 450 unique individuals. There is full information on each record containing first name, last name, and full date of birth. We also load in the unique identifiers, so that evaluations can be performed later on. 
+
+We provide the first few lines of the data below.
+
 ```{r load-data}
 records <- RLdata500
 records['rec_id'] <- seq_len(nrow(records))
 records <- lapply(records, as.character) %>% as.data.frame(stringsAsFactors = FALSE)
+# inspect RLdata500
 head(RLdata500)
 ```
 
+
 ## dblink parameters
-Next we specify the parameters for the `dblink` model. We treat the 
-name-related attributes as string-type with a Levenshtein similarity 
+
+Here, we specify the parameters for the `dblink` model. 
+
+We treat the name-related attributes as string-type with a Levenshtein similarity 
 function, and the date-related attributes as categorical (with a constant 
 similarity function). We also place a Beta prior on the distortion probability 
-for each attribute.
+for each attribute. 
+
 ```{r set-attribute-parameters}
 distortionPrior <- BetaRV(1, 50)
 levSim <- LevenshteinSimFn(threshold = 7, maxSimilarity =  10)
@@ -88,6 +113,7 @@ attributeSpecs <- list(
 
 The Beta prior on the distortion probabilities favours low distortion, as 
 shown below.
+
 ```{r plot-distortion-prior}
 tibble(prob = seq(from=0, to=1, by=0.01)) %>%
   mutate(density = dbeta(prob, distortionPrior@shape1, distortionPrior@shape2)) %>%
@@ -101,19 +127,21 @@ population size favours under-linkage, while a smaller population
 size favours over-linkge. By default, the population size is set to the 
 number of records in the data. This is specified by setting the population 
 size to `NULL`:
+
 ```{r set-population-size}
 populationSize <- NULL
 ```
 
-Finally, we specify the partitioner. Since the data is small in this case, 
+Finally, we specify the type of blocking (or the partitioner). Since the data is small in this case, 
 we can switch partitioning off by setting the partitioner to `NULL`. 
 For larger data sets, we recommend using the `KDTreePartitioner`.
+
 ```{r set-partitioner}
 partitioner <- NULL
 ```
 
 ## Running inference
-Now that we've specified the model parameters, we're ready to run inference. 
+In the previous section, we specified the model parameters. Now, we are ready to perform inference. 
 The results will be saved in the project path.
 
 ```{r run-inference}
@@ -121,20 +149,23 @@ state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
                          partitioner = partitioner, populationSize = populationSize,
                          randomSeed = 1, maxClusterSize = 10L)
 
-result <- runInference(state, projectPath, sampleSize = 1000, 
+result <- runInference(state, projectPath, sampleSize = 1000,
                        burninInterval = 5000, thinningInterval = 10)
 ```
 
 To load previously saved results, we can use the following function.
+
 ```{r, eval=FALSE}
-# result <- loadResult(sc, projectPath)
+#load("result.Rdata")
+  #result <- loadResult(sc, projectPath)
 ```
 
 
 ## MCMC diagnostics
-Diagnostic statistics along the Markov chain are saved in the 
-`diagnostics.csv` file located in the project path. We can use the function 
-below to load these into a local tibble.
+As one knows, it's important to review Markov chain Monte carlo (MCMC) diagnostics after performing 
+inference. Such diagnostics saved in the `diagnostics.csv` file located in the project path. 
+We can use the function below to load these into a local tibble.
+
 ```{r read-diagnostics}
 diagnostics <- loadDiagnostics(sc, projectPath)
 ```
@@ -164,6 +195,7 @@ ggplot(diagnostics, aes(x=iteration, y=logLikelihood)) +
 
 Additional diagnostics statistics can be computed from the samples of the 
 linkage structure, which we refer to as the *linkage chain*. 
+
 ```{r diagnostic-plots-2}
 linkageChain <- loadLinkageChain(sc, projectPath)
 
@@ -181,6 +213,13 @@ ggplot(partSizes, aes(x=iteration, y=size)) +
 ```
 
 ## Evaluation
+
+In this section, we consider many types of evaluation of our proposed methodology:
+
+- the linkage quality
+- the estimates posterior summary statistics (posterior mean, posterior variance, and credible intervals)
+- the recall and precision
+
 ### Linkage quality
 We compute a point estimate of the posterior linkage structure/clustering 
 using the *shared most probable maximal matching sets method*. Note that we 
