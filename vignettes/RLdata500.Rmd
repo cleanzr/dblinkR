@@ -120,6 +120,9 @@ The results will be saved in the project path.
 state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
                          partitioner = partitioner, populationSize = populationSize,
                          randomSeed = 1, maxClusterSize = 10L)
+
+result <- runInference(state, projectPath, sampleSize = 1000, 
+                       burninInterval = 5000, thinningInterval = 10)
 ```
 
 To load previously saved results, we can use the following function.
@@ -201,47 +204,38 @@ print(exchangeableER::pairwiseMetrics(conMat))
 ```
 
 ### Posterior estimates
-
-First, we compute the posterior mean, posterior variance, and a 95 percent credible interval from our resulting proposed methodology. These summary statistics is stored in the diagnostics, which we utilize below in order to calculate our desired summary statistics.
+We can use the saved posterior samples to infer unknown model parameters. 
+First, we consider the number of unique entities present in the data. 
+This summary statistic is stored in `diagnostics$numObservedEntities`.
+Below we compute a point estimate based on the median, along with a 95\% 
+highest density interval.
 
 ```{r}
-head(diagnostics$numObservedEntities)
-(posteriorMean <- mean(diagnostics$numObservedEntities))
-(posteriorVariance <- var(diagnostics$numObservedEntities))
-posteriorStd <- sqrt(posteriorVariance)
-error <- qnorm(0.975)*posteriorStd/sqrt(numRecords) 
-(cbind(posteriorMean - error, posteriorMean + error))
+hdiNumEntities <- median_hdih(diagnostics$numObservedEntities)
+cat("The predicted number of unique entities in RLdata500 is ", 
+    hdiNumEntities$x, ".\n", sep="")
+cat("A 95% HDI is ", 
+    sprintf("[%s,%s]", hdiNumEntities$xmin, hdiNumEntities$xmax), ".\n", sep="")
 ```
 
-
-Second, we may wish to visualize the estimated posterior distribution, while comparing this to the true
-value (red) and the posterior mean (blue). Again, we can utilize the posterior samples, which are stored in diagnostics in order to generate a histogram as shown below. 
+We can also visualize the estimated posterior distribution, while 
+comparing to the ground truth (red), posterior median (blue) and 
+95\% highest density interval (green). 
 
 ```{r posterior-plot}
 ggplot(diagnostics) + 
   geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
-  geom_vline(aes(xintercept = posteriorMean), color='blue') + 
+  geom_vline(aes(xintercept = hdiNumEntities$x), color='blue') + 
   geom_vline(aes(xintercept = 450), color='red') + 
+  geom_vline(aes(xintercept = hdiNumEntities$xmin), color = 'green') + 
+  geom_vline(aes(xintercept = hdiNumEntities$xmax), color = 'green') + 
   labs(x = "# of entities", y = "Frequency", title = "Posterior number of observed entities")
 ```
 
-In addition, we can place a credible interval (green) onto the resulting histogram quite easily, which we do below. 
-
-```{r posterior-plot-credible}
-ggplot(diagnostics) + 
-  geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
-  geom_vline(aes(xintercept = posteriorMean), color='blue') + 
-  geom_vline(aes(xintercept = 450), color='red') + 
-  geom_vline(aes(xintercept = posteriorMean - error), color='green') + 
-  geom_vline(aes(xintercept = posteriorMean + error), color='green') + 
-  labs(x = "# of entities", y = "Frequency", title = "Posterior number of observed entities")
-```
-
-
-Third, we consider the distortion level observed in each attribute, averaged 
-across all of the records. This information is also stored in the 
-diagnostics. Below we plot the posterior median for each attribute with a 
-95\% highest density interval.
+Second, we consider the distortion level observed in each attribute, averaged 
+across all of the records. This information is also stored in  
+`diagnostics`. Below we plot a point estimate of the distortion level for each 
+attribute based on the median, along with a 95\% highest density interval.
 
 ```{r posterior-attribute-distortion}
 diagnostics %>%
@@ -249,10 +243,8 @@ diagnostics %>%
   gather(attribute, numDistortions, starts_with("aggDist")) %>%
   transmute(attribute = str_match(attribute, "^aggDist(.+)")[,2],
             percDistorted = numDistortions / nrow(records)) %>% 
-  group_by(attribute) %>%
-  point_interval(.interval = hdi) %>%
-  ggplot(aes(attribute, percDistorted)) + 
-    geom_pointinterval(interval_size_range = c(0.1, 1), position=position_dodge(width = 0.9), fatten_point = 1.4) + 
-    coord_flip() + 
+  group_by(attribute) %>% 
+  ggplot(aes(y = attribute, x = percDistorted)) + 
+    stat_pointintervalh(point_interval = median_hdi, .width = 0.95) + 
     labs(x = "Attribute", y = "Distortion level (%)", title = "Posterior distortion level by attribute")
 ```
