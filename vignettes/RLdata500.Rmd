@@ -233,7 +233,7 @@ ggplot(diagnostics) +
 ```
 
 Second, we consider the distortion level observed in each attribute, averaged 
-across all of the records. This information is also stored in  
+across all of the records. This information is also stored in 
 `diagnostics`. Below we plot a point estimate of the distortion level for each 
 attribute based on the median, along with a 95\% highest density interval.
 
