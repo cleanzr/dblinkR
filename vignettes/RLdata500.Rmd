@@ -18,9 +18,9 @@ outlined in the following paper:
 D. N. (2019). d-blink: Distributed End-to-End Bayesian Entity Resolution. 
 arXiv preprint arXiv:1909.06039.
 
-We will be using a dataset called `RLdata500` that formerly available in 
+We will be using a dataset called `RLdata500` that was formerly available in 
 the RecordLinkage R package (now deprecated). For convenience, we have 
-included the dataset in `dblinkR`.
+included the `RLdata500` dataset in `dblinkR`.
 
 An outline of the vignette is as follows:
 
