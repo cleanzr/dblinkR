@@ -9,18 +9,27 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-We present an example from Marchant, Kaplan, Elazar, Rubinstein, and Steorts (2020), "d-blink: Distributed End-to-End Bayesian Entity Resolution." We will be using a dataset that was formally in the deprecated RecordLinkage package in R, known as the RLdata500 data set. This data set contains first and last name and full date of birth. 
+In this vignette, we demonstrate how to use dblinkR to perform Bayesian 
+entity resolution. dblinkR implements a generative Bayesian model that 
+jointly performs blocking and entity resolution of multiple databases as 
+outlined in the following paper:
 
-The dblinkR package performs joint blocking and entity resolution from multiple databases using the methods outlined in the paper above. 
+> Marchant, N. G., Steorts, R. C., Kaplan, A., Rubinstein, B. I. P., & Elazar, 
+D. N. (2019). d-blink: Distributed End-to-End Bayesian Entity Resolution. 
+arXiv preprint arXiv:1909.06039.
 
-Our goals include:
+We will be using a dataset called `RLdata500` that formerly available in 
+the RecordLinkage R package (now deprecated). For convenience, we have 
+included the dataset in `dblinkR`.
 
-- Loading Required Packages and Connecting to Spark 
-- Presenting the RLdata500 dataset with summary information.
-- Illustrating how we can format the RLdata500 dataset to work with the dblinkR package
-- Running Inference for dblinkR
-- Looking a Diagnostics Results 
-- Performing Evaluation Metrics 
+An outline of the vignette is as follows:
+
+1. We load the required packages and connect to Spark 
+2. We introduce the RLdata500 dataset
+3. We demonstrate how to set the d-blink model parameters
+4. We perform inference using MCMC
+5. We examine MCMC diagnostics
+6. We assess the posterior linkage structure and other model parameters
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -72,13 +81,17 @@ projectPath <- paste0(getwd(), "/") # working directory
 spark_set_checkpoint_dir(sc, paste0(projectPath, "checkpoints/"))
 ```
 
-Now, that we have loaded packages that are needed and connected to spark, we can proceed with the rest of the tutorial! 
+Now, that we have loaded the required packages and connected to Spark, we can 
+proceed with the rest of the tutorial! 
 
 ## Understanding the RLdata500 dataset
 
-The RLdata500 data consists of 500 records with 10 percent duplication. Thus, there are 450 unique individuals. There is full information on each record containing first name, last name, and full date of birth. We also load in the unique identifiers, so that evaluations can be performed later on. 
-
-We provide the first few lines of the data below.
+RLdata500 is a synthetic dataset that contains 500 personal records with 10 
+percent duplication. Thus, there are 450 unique individuals represented in 
+the data and 50 duplicate records. Each record contains the individual's 
+full name and date of birth, however these attributes may be distroted. 
+We add an additional column for record identifiers, which are used to specify 
+the linkage structure later on.
 
 ```{r load-data}
 records <- RLdata500
@@ -93,10 +106,10 @@ head(RLdata500)
 
 Here, we specify the parameters for the `dblink` model. 
 
-We treat the name-related attributes as string-type with a Levenshtein similarity 
-function, and the date-related attributes as categorical (with a constant 
-similarity function). We also place a Beta prior on the distortion probability 
-for each attribute. 
+We treat the name-related attributes as string-type with a Levenshtein 
+similarity function, and the date-related attributes as categorical (with a 
+constant similarity function). We also place a Beta prior on the distortion 
+probability for each attribute. 
 
 ```{r set-attribute-parameters}
 distortionPrior <- BetaRV(1, 50)
@@ -132,17 +145,18 @@ size to `NULL`:
 populationSize <- NULL
 ```
 
-Finally, we specify the type of blocking (or the partitioner). Since the data is small in this case, 
-we can switch partitioning off by setting the partitioner to `NULL`. 
-For larger data sets, we recommend using the `KDTreePartitioner`.
+Finally, we specify the partitioner which is used for blocking the entities 
+to improve scalability. Since the data is small in this case, we can switch 
+partitioning off by setting the partitioner to `NULL`. For larger data sets, 
+we recommend using the `KDTreePartitioner`.
 
 ```{r set-partitioner}
 partitioner <- NULL
 ```
 
 ## Running inference
-In the previous section, we specified the model parameters. Now, we are ready to perform inference. 
-The results will be saved in the project path.
+In the previous section, we specified the model parameters. Now, we are ready 
+to perform inference. The results will be saved in the project path.
 
 ```{r run-inference}
 state <- initializeState(sc, records, attributeSpecs, recIdColname = 'rec_id',
@@ -153,7 +167,7 @@ result <- runInference(state, projectPath, sampleSize = 1000,
                        burninInterval = 5000, thinningInterval = 10)
 ```
 
-To load previously saved results, we can use the following function.
+To load results from a previous run, we can use the following function.
 
 ```{r, eval=FALSE}
 #load("result.Rdata")
@@ -162,15 +176,18 @@ To load previously saved results, we can use the following function.
 
 
 ## MCMC diagnostics
-As one knows, it's important to review Markov chain Monte carlo (MCMC) diagnostics after performing 
-inference. Such diagnostics saved in the `diagnostics.csv` file located in the project path. 
-We can use the function below to load these into a local tibble.
+
+It's important to review convergence and mixing diagnostics when performing 
+inference using Markov chain Monte Carlo (MCMC). Various diagnostics are saved 
+in the `diagnostics.csv` file located in the project path. We can use the 
+function below to load these into a local tibble.
 
 ```{r read-diagnostics}
 diagnostics <- loadDiagnostics(sc, projectPath)
 ```
 
-It's useful to examine trace plots, to assess the convergence.
+Below we provide trace plots of various summary statistics.
+
 ```{r diagnostic-plots-1}
 ggplot(diagnostics, aes(x=iteration, y=numObservedEntities)) + 
   geom_line() + 
@@ -193,7 +210,7 @@ ggplot(diagnostics, aes(x=iteration, y=logLikelihood)) +
        y = 'log-likelihood')
 ```
 
-Additional diagnostics statistics can be computed from the samples of the 
+Additional diagnostic statistics can be computed from the samples of the 
 linkage structure, which we refer to as the *linkage chain*. 
 
 ```{r diagnostic-plots-2}
@@ -214,17 +231,25 @@ ggplot(partSizes, aes(x=iteration, y=size)) +
 
 ## Evaluation
 
-In this section, we consider many types of evaluation of our proposed methodology:
+In this section, we evaluate the predictions of our model and compare against 
+the ground truth (provided with the synthetic data). 
 
-- the linkage quality
-- the estimates posterior summary statistics (posterior mean, posterior variance, and credible intervals)
-- the recall and precision
+We compute pairwise precision and recall using a point estimate of the 
+linkage structure. We also inspect the posterior distribution over two 
+important summary statistics:
+
+* the number of unique individuals in the data, and
+* the distortion level of each attribute.
 
 ### Linkage quality
 We compute a point estimate of the posterior linkage structure/clustering 
-using the *shared most probable maximal matching sets method*. Note that we 
-must use the `collect` function to retrieve the data from Spark into a local 
-tibble.
+using the *shared most probable maximal matching sets method* 
+(Steorts et al., 2016). This method creates a globally consistent estimate 
+that obeys transitivity constraints.
+
+Note that we must use the `collect` function to retrieve the data from Spark 
+into a local tibble.
+
 ```{r smpc}
 predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
 ```
@@ -232,6 +257,7 @@ predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
 Next we assess the quality of the predicted linkage structure by 
 computing pairwise precision and recall using functions from the 
 [`exchangeableER`](https://github.com/ngmarchant/exchangeableER) package.
+
 ```{r pairwise-metrics, message=FALSE}
 library(exchangeableER)
 trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
@@ -243,6 +269,7 @@ print(exchangeableER::pairwiseMetrics(conMat))
 ```
 
 ### Posterior estimates
+
 We can use the saved posterior samples to infer unknown model parameters. 
 First, we consider the number of unique entities present in the data. 
 This summary statistic is stored in `diagnostics$numObservedEntities`.
