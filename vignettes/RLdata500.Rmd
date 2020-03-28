@@ -89,7 +89,7 @@ proceed with the rest of the tutorial!
 RLdata500 is a synthetic dataset that contains 500 personal records with 10 
 percent duplication. Thus, there are 450 unique individuals represented in 
 the data and 50 duplicate records. Each record contains the individual's 
-full name and date of birth, however these attributes may be distroted. 
+full name and date of birth, however these attributes may be distorted. 
 We add an additional column for record identifiers, which are used to specify 
 the linkage structure later on.
 
