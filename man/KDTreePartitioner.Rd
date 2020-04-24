@@ -7,13 +7,25 @@
 KDTreePartitioner(numLevels, attributes)
 }
 \arguments{
-\item{numLevels}{the depth/number of levels of the tree. The partitions are
+\item{numLevels}{The depth/number of levels of the tree. The partitions are
 the leaves of the tree, hence the number of partitions is given by
 \code{2^numLevels}.}
 
-\item{attributes}{splits are performed by cycling through the attributes
-in this vector.}
+\item{attributes}{The attributes used for splitting at each level of the
+tree are taken by cycling through this vector. For example, if
+\code{attributes = c("A", "B")}, the split at the 0-th level is based on
+attribute "A", the split at the 1-st level is based on attribute "B",
+the split at the 2-nd level is based on attribute "A", etc.}
 }
 \description{
-k-d tree partitioner
+Partitions the space of entities into blocks using a k-d tree. Each node
+of the tree is associated with a splitting rule that divides the input
+space into two parts, based on the value of one of the attributes.
+The tree is fitted using the observed records, and the splits are
+chosen to yield a balanced tree. The depth of the tree and the attributes
+used for splitting at each level are user-specified parameters.
+}
+\examples{
+# Specify a partitioner for RLdata10000
+partitioner <- KDTreePartitioner(numLevels = 2, attributes = c("fname_c1", "by"))
 }

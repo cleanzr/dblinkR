@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{as_scala_some}
 \alias{as_scala_some}
-\title{Converts an object to a 'Some' object}
+\title{Wraps an object in a Scala 'Some' object}
 \usage{
 as_scala_some(x, sc)
 }
@@ -12,5 +12,5 @@ as_scala_some(x, sc)
 \item{sc}{A \code{spark_connection}}
 }
 \description{
-Converts an object to a 'Some' object
+Wraps an object in a Scala 'Some' object
 }

@@ -21,7 +21,7 @@ setClass("Attribute", slots=c(simFn="SimFn",
 #' A named list of `Attribute` objects is required when initializing
 #' the model (see [`initializeState`]).
 #'
-#' @param simFn a [`SimilarityFn`]` object.
+#' @param simFn a [`SimFn`]` object.
 #' @param distortionPrior a [`BetaRV`] object. Specifies the prior
 #'   on the distortion probability for the attribute.
 #'

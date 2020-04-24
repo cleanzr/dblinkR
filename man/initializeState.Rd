@@ -34,10 +34,9 @@ identifiers.}
 partition the space of entities (optional). If NULL, the entities are
 not partitioned at all, however this can severely hinder scalability.}
 
-\item{populationSize}{Specifies the prior on the size of the population of
-latent entities. An integer specifies a fixed population size, a
-a \code{\link{ShiftedNegBinomRV}} object specifies a shifted negative binomial
-prior.}
+\item{populationSize}{An integer specifying the size of the latent entity
+population (optional). If NULL, the population size is set equal to the
+number of records in \code{data}.}
 
 \item{fileIdColname}{Column name in \code{data} that contains contains
 file/source identifiers for the records. If NULL, the records are assumed

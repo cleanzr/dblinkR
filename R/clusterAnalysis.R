@@ -36,7 +36,7 @@ spark_jobj.clusters <- function(x, ...) {
   x$jobj
 }
 
-#' @param x A `clusters` object.
+# @param x A `clusters` object.
 collect.clusters <- function(x){
   # Collect as a tibble
   clusters <- x %>%

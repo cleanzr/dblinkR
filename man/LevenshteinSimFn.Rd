@@ -6,6 +6,13 @@
 \usage{
 LevenshteinSimFn(threshold, maxSimilarity)
 }
+\arguments{
+\item{threshold}{Similarities below this threshold will be set to zero. A
+higher threshold improves the efficiency of the inference, possibly at
+the expense of accuracy.}
+
+\item{maxSimilarity}{Similarities will be in the range \verb{[0, maxSimilarity]}.}
+}
 \value{
 a \code{LevenshteinSimFn} object
 }

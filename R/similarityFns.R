@@ -45,15 +45,17 @@ setClass("LevenshteinSimFn", contains = "SimFn")
 
 #' Levenshtein similarity function
 #'
-#' @param threshold
-#' @param maxSimilarity
+#' @param threshold Similarities below this threshold will be set to zero. A
+#'   higher threshold improves the efficiency of the inference, possibly at
+#'   the expense of accuracy.
+#' @param maxSimilarity Similarities will be in the range `[0, maxSimilarity]`.
 #' @return a `LevenshteinSimFn` object
 LevenshteinSimFn <- function(threshold, maxSimilarity) {
   new("LevenshteinSimFn", threshold = threshold, maxSimilarity = maxSimilarity)
 }
 
-#' @param x A `SimFn` object
-#' @param sc A `spark_connection`
+# @param x A `SimFn` object
+# @param sc A `spark_connection`
 as_scala.SimFn <- function(x, sc) {
   switch(class(x)[1],
          ConstantSimFn = sparklyr::invoke_static(sc,
