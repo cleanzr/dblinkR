@@ -37,8 +37,8 @@ to a Spark deployment.
 ## Example
 
 The [RLdata500 vignette](vignettes/RLdata500.Rmd) demonstrates how to
-use the `dblinkR` to perform entity resolution for a small synthetic
-data set. This example is small enough to run well on a laptop (Spark
+use `dblinkR` to perform entity resolution for a small synthetic
+data set. This example is small enough to run on a laptop (Spark
 cluster not required).
 
 ## Licence
