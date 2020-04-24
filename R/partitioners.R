@@ -35,6 +35,10 @@ setClass("KDTreePartitioner", slots = c(numLevels = "integer",
 #'   `attributes = c("A", "B")`, the split at the 0-th level is based on 
 #'   attribute "A", the split at the 1-st level is based on attribute "B", 
 #'   the split at the 2-nd level is based on attribute "A", etc.
+#' 
+#' @examples
+#' # Specify a partitioner for RLdata10000
+#' partitioner <- KDTreePartitioner(numLevels = 2, attributes = c("fname_c1", "by"))
 KDTreePartitioner <- function(numLevels, attributes) {
   new("KDTreePartitioner", numLevels=as.integer(numLevels), attributes=attributes)
 }
