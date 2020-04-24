@@ -148,7 +148,7 @@ populationSize <- NULL
 Finally, we specify the partitioner which is used for blocking the entities 
 to improve scalability. Since the data is small in this case, we can switch 
 partitioning off by setting the partitioner to `NULL`. For larger data sets, 
-we recommend using the `KDTreePartitioner`.
+we recommend using the `KDTreePartitioner` (please refer to the documentation).
 
 ```{r set-partitioner}
 partitioner <- NULL
