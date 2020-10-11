@@ -170,8 +170,7 @@ result <- runInference(state, projectPath, sampleSize = 1000,
 To load results from a previous run, we can use the following function.
 
 ```{r, eval=FALSE}
-#load("result.Rdata")
-  #result <- loadResult(sc, projectPath)
+#result <- loadResult(sc, projectPath)
 ```
 
 
@@ -261,8 +260,8 @@ computing pairwise precision and recall using functions from the
 ```{r pairwise-metrics, message=FALSE}
 library(exchangeableER)
 trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
-predMatches <- exchangeableER::clustersToPairs.Clusters(predClusters)
-trueMatches <- exchangeableER::clustersToPairs.Clusters(trueClusters)
+predMatches <- exchangeableER::clustersToPairs(predClusters)
+trueMatches <- exchangeableER::clustersToPairs(trueClusters)
 numRecords <- nrow(records)
 conMat <- exchangeableER::confusionMatrix(predMatches, trueMatches, numRecords*(numRecords - 1)/2)
 print(exchangeableER::pairwiseMetrics(conMat))
@@ -277,11 +276,11 @@ Below we compute a point estimate based on the median, along with a 95\%
 highest density interval.
 
 ```{r}
-hdiNumEntities <- median_hdih(diagnostics$numObservedEntities)
+hdiNumEntities <- median_hdi(diagnostics$numObservedEntities)
 cat("The predicted number of unique entities in RLdata500 is ", 
-    hdiNumEntities$x, ".\n", sep="")
+    hdiNumEntities$y, ".\n", sep="")
 cat("A 95% HDI is ", 
-    sprintf("[%s,%s]", hdiNumEntities$xmin, hdiNumEntities$xmax), ".\n", sep="")
+    sprintf("[%s,%s]", hdiNumEntities$ymin, hdiNumEntities$ymax), ".\n", sep="")
 ```
 
 We can also visualize the estimated posterior distribution, while 
@@ -291,10 +290,10 @@ comparing to the ground truth (red), posterior median (blue) and
 ```{r posterior-plot}
 ggplot(diagnostics) + 
   geom_histogram(aes(x=numObservedEntities), binwidth = 1) + 
-  geom_vline(aes(xintercept = hdiNumEntities$x), color='blue') + 
+  geom_vline(aes(xintercept = hdiNumEntities$y), color='blue') + 
   geom_vline(aes(xintercept = 450), color='red') + 
-  geom_vline(aes(xintercept = hdiNumEntities$xmin), color = 'green') + 
-  geom_vline(aes(xintercept = hdiNumEntities$xmax), color = 'green') + 
+  geom_vline(aes(xintercept = hdiNumEntities$ymin), color = 'green') + 
+  geom_vline(aes(xintercept = hdiNumEntities$ymax), color = 'green') + 
   labs(x = "# of entities", y = "Frequency", title = "Posterior number of observed entities")
 ```
 
