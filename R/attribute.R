@@ -21,11 +21,12 @@ setClass("Attribute", slots=c(simFn="SimFn",
 #' A named list of `Attribute` objects is required when initializing
 #' the model (see [`initializeState`]).
 #'
-#' @param simFn a [`SimFn`]` object.
+#' @param simFn a [`SimFn-class`]` object.
 #' @param distortionPrior a [`BetaRV`] object. Specifies the prior
 #'   on the distortion probability for the attribute.
 #'
 #' @return The `Attribute` constructor returns an `Attribute` object.
+#' @export
 Attribute <- function(simFn, distortionPrior) {
   new("Attribute", simFn=simFn, distortionPrior=distortionPrior)
 }
@@ -34,6 +35,7 @@ Attribute <- function(simFn, distortionPrior) {
 #' @param x an `R` object
 #' @return `is.Attribute` returns TRUE if the argument is an `Attribute`
 #' object and FALSE otherwise.
+#' @export
 is.Attribute <- function(x) inherits(x, "Attribute")
 
 setClass("CategoricalAttribute", contains = "Attribute")
@@ -43,6 +45,7 @@ setClass("CategoricalAttribute", contains = "Attribute")
 #' `CategoricalAttribute` object.
 #' It is intended for modeling categorical attributes, and uses a
 #' a constant similarity function.
+#' @export
 CategoricalAttribute <- function(distortionPrior) {
   new("CategoricalAttribute", simFn=ConstantSimFn(),
       distortionPrior=distortionPrior)
@@ -52,6 +55,7 @@ CategoricalAttribute <- function(distortionPrior) {
 #' @param x an `R` object
 #' @return `is.CategoricalAttribute` returns TRUE if the argument is a
 #' `CategoricalAttribute` object and FALSE otherwise.
+#' @export
 is.CategoricalAttribute <- function(x) inherits(x, "CategoricalAttribute")
 
 

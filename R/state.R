@@ -38,6 +38,7 @@ spark_jobj.dblinkstate <- function(x, ...) {
 #' @return A `state_jobj` object
 #'
 #' @seealso [`loadState`]
+#' @export
 initializeState <- function(sc, data, attributeSpecs, recIdColname,
                             partitioner, populationSize, fileIdColname = NULL,
                             randomSeed = 1L, maxClusterSize = 10L) {
@@ -123,6 +124,7 @@ initializeState <- function(sc, data, attributeSpecs, recIdColname,
 #'
 #' @param projectPath Path to the project directory.
 #' @return A `state_jobj` object.
+#' @export
 loadState <- function(sc, projectPath) {
   projectPath <- forge::cast_scalar_character(projectPath, id='path')
   state_jobj <- sc %>%

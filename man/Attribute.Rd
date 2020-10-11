@@ -16,7 +16,7 @@ CategoricalAttribute(distortionPrior)
 is.CategoricalAttribute(x)
 }
 \arguments{
-\item{simFn}{a \code{\link{SimFn}}` object.}
+\item{simFn}{a \code{\linkS4class{SimFn}}` object.}
 
 \item{distortionPrior}{a \code{\link{BetaRV}} object. Specifies the prior
 on the distortion probability for the attribute.}

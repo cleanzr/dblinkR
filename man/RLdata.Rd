@@ -8,7 +8,8 @@
 \alias{RLdata10000}
 \alias{identity.RLdata10000}
 \title{Test data for Record Linkage}
-\format{\code{RLdata500} and \code{RLdata10000} are data frames with
+\format{
+\code{RLdata500} and \code{RLdata10000} are data frames with
 500 and 10000 records respectively, and 7 variables:
 \describe{
 \item{fname_c1}{First name, first component}
@@ -22,7 +23,16 @@
 \code{identity.RLdata500} and \code{identity.RLdata10000} are vectors
 representing the true record ids of the two data sets. A pair of records
 are duplicates, if and only if their corresponding values in the
-identity vector agree.}
+identity vector agree.
+
+An object of class \code{data.frame} with 500 rows and 7 columns.
+
+An object of class \code{numeric} of length 500.
+
+An object of class \code{data.frame} with 10000 rows and 7 columns.
+
+An object of class \code{numeric} of length 10000.
+}
 \source{
 Generated with the data generation component of Febrl (Freely Extensible
 Biomedical Record Linkage), version 0.3

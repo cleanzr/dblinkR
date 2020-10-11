@@ -15,6 +15,11 @@
 #'
 #' @description
 #' Virtual class for a similarity function
+#'
+#' @seealso Constructors for sub-classes include: [`ConstantSimFn`] and
+#' [`LevenshteinSimFn`].
+#'
+#' @export
 setClass("SimFn", slots = c(threshold = "numeric", maxSimilarity = "numeric"),
          contains = "VIRTUAL", validity = .check_SimFn)
 
@@ -36,6 +41,7 @@ setClass("ConstantSimFn", contains = "SimFn", validity = .check_ConstantSimFn)
 #' Represents a similarity function that returns zero for all pairs of values
 #'
 #' @return a `ConstantSimFn` object
+#' @export
 ConstantSimFn <- function() {
   new("ConstantSimFn", threshold = 0, maxSimilarity = 0)
 }
@@ -50,6 +56,7 @@ setClass("LevenshteinSimFn", contains = "SimFn")
 #'   the expense of accuracy.
 #' @param maxSimilarity Similarities will be in the range `[0, maxSimilarity]`.
 #' @return a `LevenshteinSimFn` object
+#' @export
 LevenshteinSimFn <- function(threshold, maxSimilarity) {
   new("LevenshteinSimFn", threshold = threshold, maxSimilarity = maxSimilarity)
 }

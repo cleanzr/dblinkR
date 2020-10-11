@@ -6,6 +6,7 @@ NULL
 #' @param sc A `spark_connection`
 #' @param projectPath Path to the project directory.
 #' @return a table containing diagnostics along the Markov chain
+#' @export
 loadDiagnostics <- function(sc, projectPath) {
   # TODO Use the spark context to read
   diagPath <- paste(projectPath, "diagnostics.csv", sep = "/")
@@ -21,11 +22,14 @@ loadDiagnostics <- function(sc, projectPath) {
 #' @return A tibble representing the cluster size distribution along the chain.
 #'
 #' @seealso [`partitionSizes`], [`loadDiagnostics`]
-#' @export clusterSizeDistribution
+#' @rdname clusterSizeDistribution
+#' @export
 setGeneric("clusterSizeDistribution",
            function(x, ...) standardGeneric("clusterSizeDistribution"))
 
 #' @rdname clusterSizeDistribution
+#' @export
+#' @importFrom sparklyr.nested sdf_explode
 setMethod("clusterSizeDistribution", signature = c(x="linkagechain"),
   function(x, ...) {
     jobj <- sparklyr::spark_jobj(x)
@@ -45,6 +49,7 @@ setMethod("clusterSizeDistribution", signature = c(x="linkagechain"),
 )
 
 #' @rdname clusterSizeDistribution
+#' @export
 setMethod("clusterSizeDistribution", signature = c(x="dblinkresult"),
   function(x, ...) {
     linkageChain <- x$linkageChain
@@ -71,6 +76,7 @@ setGeneric("partitionSizes",
            function(x, ...) standardGeneric("partitionSizes"))
 
 #' @rdname partitionSizes
+#' @export
 setMethod("partitionSizes", signature = c(x="linkagechain"),
   function(x) {
     jobj <- sparklyr::spark_jobj(x)
@@ -90,6 +96,7 @@ setMethod("partitionSizes", signature = c(x="linkagechain"),
 )
 
 #' @rdname partitionSizes
+#' @export
 setMethod("partitionSizes", signature = c(x="dblinkresult"),
   function(x, ...) {
     linkageChain <- x$linkageChain

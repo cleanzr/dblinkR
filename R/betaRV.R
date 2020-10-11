@@ -49,6 +49,7 @@ setClass("BetaRV", slots = c(shape1 = "numeric", shape2 = "numeric"),
 #'
 #' @seealso Other random variables defined in this package
 #' include [`GammaRV`], [`DirichletRV`] and [`ShiftedNegBinomRV`].
+#' @export
 BetaRV <- function(shape1, shape2) {
   new("BetaRV", shape1=shape1, shape2=shape2)
 }

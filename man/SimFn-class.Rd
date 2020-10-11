@@ -7,3 +7,7 @@
 \description{
 Virtual class for a similarity function
 }
+\seealso{
+Constructors for sub-classes include: \code{\link{ConstantSimFn}} and
+\code{\link{LevenshteinSimFn}}.
+}

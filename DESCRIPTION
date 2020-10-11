@@ -38,7 +38,7 @@ Collate:
     'data.R'
     'dependencies.R'
     'summaryStats.R'
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)
 Suggests: knitr, rmarkdown, stringr, dplyr, tidyr, ggplot2, tidybayes, 
     exchangeableER

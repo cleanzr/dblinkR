@@ -27,6 +27,7 @@ collect.linkagechain <- function(x, ...) {
 #' @param sc A `spark_connection`.
 #' @param projectPath Path to the project directory.
 #' @return A `LinkageChain` jobj.
+#' @export
 loadLinkageChain <- function(sc, projectPath) {
   projectPath <- forge::cast_scalar_character(projectPath, id='projectPath')
 

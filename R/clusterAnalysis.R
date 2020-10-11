@@ -9,12 +9,14 @@ new_mostprobableclusters <- function(jobj, ...) {
   mpc
 }
 
+#' @export
+#' @importFrom sparklyr spark_jobj
 spark_jobj.mostprobableclusters <- function(x, ...) {
   x$jobj
 }
 
-#' @rdname mostProbableClusters
-#' @param x A `mostprobableclusters` object.
+#' @export
+#' @importFrom dplyr collect
 collect.mostprobableclusters <- function(x, ...){
   # Collect as a tibble
   mpc <- x %>%
@@ -32,11 +34,14 @@ new_clusters <- function(jobj, ...) {
   clusters
 }
 
+#' @export
+#' @importFrom sparklyr spark_jobj
 spark_jobj.clusters <- function(x, ...) {
   x$jobj
 }
 
-# @param x A `clusters` object.
+#' @export
+#' @importFrom dplyr collect
 collect.clusters <- function(x){
   # Collect as a tibble
   clusters <- x %>%
@@ -46,7 +51,6 @@ collect.clusters <- function(x){
   # Extract column as list and cast lists to vectors
   clusters <- unlist(clusters, recursive=FALSE, use.names=FALSE) %>%
     lapply(simplify2array)
-  class(clusters) <- c('Clusters', class(clusters))
   clusters
 }
 
@@ -70,11 +74,13 @@ collect.clusters <- function(x){
 #' to Graphical Record Linkage and Deduplication. _JASA_ \strong{111},
 #' 1660–1672 (2016).
 #'
-#' @export sharedMostProbableClusters
+#' @rdname sharedMostProbableClusters
+#' @export
 setGeneric("sharedMostProbableClusters",
            function(x, ...) standardGeneric("sharedMostProbableClusters"))
 
 #' @rdname sharedMostProbableClusters
+#' @export
 setMethod("sharedMostProbableClusters", signature = c(x="linkagechain"),
   function(x, ...) {
     jobj <- sparklyr::spark_jobj(x)
@@ -89,6 +95,7 @@ setMethod("sharedMostProbableClusters", signature = c(x="linkagechain"),
 )
 
 #' @rdname sharedMostProbableClusters
+#' @export
 setMethod("sharedMostProbableClusters",
   signature = c(x="mostprobableclusters"),
   function(x, ...) {
@@ -102,6 +109,7 @@ setMethod("sharedMostProbableClusters",
 )
 
 #' @rdname sharedMostProbableClusters
+#' @export
 setMethod("sharedMostProbableClusters", signature = c(x="dblinkresult"),
   function(x, ...) {
     linkageChain <- x$linkageChain
@@ -137,11 +145,13 @@ setMethod("sharedMostProbableClusters", signature = c(x="dblinkresult"),
 #' The [`sharedMostProbableClusters`] function computes a point estimate
 #' from the most probable clusters (the output of this function), which
 #' obeys transitivity constraints.
-#' @export mostProbableClusters
+#' @rdname mostProbableClusters
+#' @export
 setGeneric("mostProbableClusters",
            function(x, ...) standardGeneric("mostProbableClusters"))
 
 #' @rdname mostProbableClusters
+#' @export
 setMethod("mostProbableClusters", signature = c(x="linkagechain"),
   function(x, ...) {
     jobj <- sparklyr::spark_jobj(x)
@@ -154,6 +164,7 @@ setMethod("mostProbableClusters", signature = c(x="linkagechain"),
 )
 
 #' @rdname mostProbableClusters
+#' @export
 setMethod("mostProbableClusters", signature = c(x="dblinkresult"),
   function(x, ...) {
     linkageChain <- x$linkageChain

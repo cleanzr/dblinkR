@@ -14,6 +14,7 @@ new_dblinkresult <- function(state, projectPath, ..., linkageChain = NULL) {
 #' @param sc A `spark_connection`.
 #' @param projectPath path to the project directory.
 #' @return A `LinkageChain` jobj.
+#' @export
 loadResult <- function(sc, projectPath) {
   finalState <- loadState(sc, projectPath)
   linkageChain <- loadLinkageChain(sc, projectPath)
@@ -50,6 +51,7 @@ loadResult <- function(sc, projectPath) {
 #'   Markov chain
 #'
 #' @seealso [`initializeState`], [`loadState`]
+#' @export
 runInference <- function(initialState, projectPath, sampleSize,
                          burninInterval = 0L, thinningInterval = 1L,
                          checkpointInterval = 20L, writeBufferSize = 10L,
