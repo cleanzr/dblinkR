@@ -262,7 +262,7 @@ library(clevr)
 predMatches <- clusters_to_pairs(predClusters)
 trueMatches <- membership_to_pairs(identity.RLdata500, elem_ids = records$rec_id)
 numRecords <- nrow(records)
-measures <- eval_report_pairs(predMatches, trueMatches, numRecords*(numRecords - 1)/2)
+measures <- eval_report_pairs(trueMatches, predMatches, numRecords*(numRecords - 1)/2)
 print(measures)
 ```
 
