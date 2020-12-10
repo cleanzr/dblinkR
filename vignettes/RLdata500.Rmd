@@ -250,21 +250,20 @@ Note that we must use the `collect` function to retrieve the data from Spark
 into a local tibble.
 
 ```{r smpc}
-predClusters <- dblinkR::sharedMostProbableClusters(linkageChain) %>% collect()
+predClusters <- sharedMostProbableClusters(linkageChain) %>% collect()
 ```
 
 Next we assess the quality of the predicted linkage structure by 
 computing pairwise precision and recall using functions from the 
-[`exchangeableER`](https://github.com/ngmarchant/exchangeableER) package.
+[`clevr`](https://github.com/cleanzr/clevr) package.
 
 ```{r pairwise-metrics, message=FALSE}
-library(exchangeableER)
-trueClusters <- exchangeableER::membershipToClusters(identity.RLdata500, ids = records$rec_id)
-predMatches <- exchangeableER::clustersToPairs(predClusters)
-trueMatches <- exchangeableER::clustersToPairs(trueClusters)
+library(clevr)
+predMatches <- clusters_to_pairs(predClusters)
+trueMatches <- membership_to_pairs(identity.RLdata500, elem_ids = records$rec_id)
 numRecords <- nrow(records)
-conMat <- exchangeableER::confusionMatrix(predMatches, trueMatches, numRecords*(numRecords - 1)/2)
-print(exchangeableER::pairwiseMetrics(conMat))
+measures <- eval_report_pairs(trueMatches, predMatches, numRecords*(numRecords - 1)/2)
+print(measures)
 ```
 
 ### Posterior estimates
@@ -307,9 +306,9 @@ diagnostics %>%
   select(iteration, starts_with("aggDist")) %>%
   gather(attribute, numDistortions, starts_with("aggDist")) %>%
   transmute(attribute = str_match(attribute, "^aggDist(.+)")[,2],
-            percDistorted = numDistortions / nrow(records)) %>% 
+            percDistorted = numDistortions / nrow(records) * 100) %>% 
   group_by(attribute) %>% 
   ggplot(aes(y = attribute, x = percDistorted)) + 
-    stat_pointintervalh(point_interval = median_hdi, .width = 0.95) + 
-    labs(x = "Attribute", y = "Distortion level (%)", title = "Posterior distortion level by attribute")
+    stat_pointinterval(point_interval = median_hdi, .width = 0.95) + 
+    labs(y = "Attribute", x = "Distortion level (%)", title = "Posterior distortion level by attribute")
 ```
