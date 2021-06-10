@@ -8,7 +8,7 @@
 [`dblink`](https://github.com/cleanzr/dblink)—an Apache Spark package
 for performing unsupervised entity resolution. It implements a
 generative Bayesian model for entity resolution called `blink` (Steorts
-2015), with extensions proposed in (Marchant et al. 2019). Unlike many
+2015), with extensions proposed in (Marchant et al. 2021). Unlike many
 entity resolution methods, `dblink` approximates the full posterior
 distribution over the *linkage structure*. This facilitates propagation
 of uncertainty to post-entity resolution analysis, and provides a
@@ -37,9 +37,9 @@ to a Spark deployment.
 ## Example
 
 The [RLdata500 vignette](vignettes/RLdata500.Rmd) demonstrates how to
-use `dblinkR` to perform entity resolution for a small synthetic
-data set. This example is small enough to run on a laptop (Spark
-cluster not required).
+use `dblinkR` to perform entity resolution for a small synthetic data
+set. This example is small enough to run on a laptop (Spark cluster not
+required).
 
 ## Licence
 
@@ -47,14 +47,15 @@ GPL-3
 
 ## References
 
-<div id="refs" class="references">
+<div id="refs" class="references hanging-indent">
 
-<div id="ref-marchant_d-blink_2019">
+<div id="ref-marchant_d-blink_2021">
 
-Marchant, Neil G., Rebecca C. Steorts, Andee Kaplan, Benjamin I. P.
-Rubinstein, and Daniel N. Elazar. 2019. “D-Blink: Distributed End-to-End
-Bayesian Entity Resolution.” *arXiv E-Prints*, September.
-<https://arxiv.org/abs/1909.06039>.
+Marchant, Neil G., Andee Kaplan, Daniel N. Elazar, Benjamin I. P.
+Rubinstein, and Rebecca C. Steorts. 2021. “d-blink: Distributed
+End-to-End Bayesian Entity Resolution.” *Journal of Computational and
+Graphical Statistics* 30 (2): 406–21.
+<https://doi.org/10.1080/10618600.2020.1825451>.
 
 </div>
 
